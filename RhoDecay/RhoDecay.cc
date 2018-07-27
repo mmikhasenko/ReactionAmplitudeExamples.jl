@@ -20,6 +20,7 @@
 #define RHO_MASS 0.7755
 
 #define PI_MASS_SQ (PI_MASS*PI_MASS)
+#define PI0_MASS_SQ (PI0_MASS*PI0_MASS)
 #define RHO_MASS_SQ (RHO_MASS*RHO_MASS)
 #define PROT_MASS_SQ (PROT_MASS*PROT_MASS)
 
@@ -41,13 +42,15 @@ int main() {
         const int Nevents = 100;
         for (int i = 0; i < Nevents; i++) {
                 std::vector<double> piProt {0.0, 0.0, sqrt(E_BEAM*E_BEAM-PI_MASS_SQ), E_BEAM+PROT_MASS};
-                auto rhoprot = Generator::decay_p(piProt,RHO_MASS,PROT_MASS, cosTh_from_t, dist_phi(en));
+                auto rhoprot = Generator::decay_p(piProt,RHO_MASS_SQ, PROT_MASS_SQ, cosTh_from_t, dist_phi(en));
                 auto rho = rhoprot[0];
-                auto pions = Generator::decay_p(rho,PI_MASS,PI0_MASS, dist_cosT(en), dist_phi(en));
+                auto pions = Generator::decay_p(rho,PI_MASS_SQ, PI0_MASS_SQ, dist_cosT(en), dist_phi(en));
                 auto pi0 = pions[1];
                 auto gammas = Generator::decay_p(pi0,0.0,0.0, dist_cosT(en), dist_phi(en));
                 // print photons
-                std::cout << gammas[0][3] <<", " << gammas[1][3] << "\n";
+                std::cout << "photon energies: " << gammas[0][3] <<", " << gammas[1][3] << "\n";
+
+                std::cout << "pi0 mass = " << sqrt(Generator::inv_masssq_of_sum(gammas[0],gammas[1])) << "\n";
         }
         return 0.0;
 }
