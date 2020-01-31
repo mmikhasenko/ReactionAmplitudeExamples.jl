@@ -38,4 +38,14 @@ let sv = LinRange(-0.1, 1.4, 200), m1=0.14, m2=0.547
     plot!()
 end
 
+# gr()
+# let m1=0.14, m2=0.547
+#     sx = LinRange(-0.1, 1.4, 200)
+#     sy = LinRange(-1,1,100)
+#     #
+#     iRho2(s) = iRho(s, m1^2,m2^2)*s
+#     cal1 = iRho2.(transpose(sx) .+ 1im .* sy)
+#     heatmap(sx, sy, real.(cal1))
+# end
+
 savefig(joinpath("plot","ChewMandelstam.pdf"))
