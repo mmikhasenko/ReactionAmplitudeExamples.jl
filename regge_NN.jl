@@ -12,11 +12,11 @@ ampl_sz(s,z) = s^(1/2 + t(s,z)) + s^(1/2 + u(s,z))
 const amax = ampl_sz(slims[2],1)
 
 # plot the model
-let
+p1 = let
   zv = range(-1,1,length=100)
   sv = range(slims...,length=100)
   calv = ampl_sz.(sv',zv) ./ amax
-  heatmap(sv,zv,calv)
+  heatmap(sv,zv,calv, xlab="s (GeV^2)", ylab="cos(theta)", c=:viridis)
 end
 
 # data set
@@ -41,9 +41,11 @@ ps = Flux.params(model)
 @epochs 2000 Flux.train!(loss, ps, dt, opt) #, cb = () -> println("training, $()")
 
 #  plot the model
-let
+p2 = let
   zv = range(-1,1,length=100)
   sv = range(slims...,length=100)
   calv = [model([s,t_sz(s,z)])[1] for (z,s) in Iterators.product(zv,sv)]
-  heatmap(sv,zv,calv)
+  heatmap(sv,zv,calv, xlab="s (GeV^2)", ylab="cos(theta)", c=:viridis)
 end
+
+plot(p1, p2, layout=grid(1,2), size=(1000,350))
