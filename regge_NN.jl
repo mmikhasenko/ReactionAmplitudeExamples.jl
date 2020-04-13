@@ -16,7 +16,7 @@ p1 = let
   zv = range(-1,1,length=100)
   sv = range(slims...,length=100)
   calv = ampl_sz.(sv',zv) ./ amax
-  heatmap(sv,zv,calv, xlab="s (GeV^2)", ylab="cos(theta)", c=:viridis)
+  heatmap(sv,zv,calv, xlab="s (GeV^2)", ylab="cos(theta)", c=:viridis, clim=(0,1))
 end
 
 # data set
@@ -45,7 +45,7 @@ p2 = let
   zv = range(-1,1,length=100)
   sv = range(slims...,length=100)
   calv = [model([s,t_sz(s,z)])[1] for (z,s) in Iterators.product(zv,sv)]
-  heatmap(sv,zv,calv, xlab="s (GeV^2)", ylab="cos(theta)", c=:viridis)
+  heatmap(sv,zv,calv, xlab="s (GeV^2)", ylab="cos(theta)", c=:viridis, clim=(0,1))
 end
 
 plot(p1, p2, layout=grid(1,2), size=(1000,350))
