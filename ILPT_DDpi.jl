@@ -78,7 +78,7 @@ integrand_a(s,σ) = sqrt(λ(s,σ,mD0sq)*λ(σ,mD0sq,mπsq))/(σ*s)*abs2(a(s,σ))
 
 # effect of the exchange: t vs a
 let
-    plot(xlab="m(D⁰D⁰π)")
+    plot(xlab="m(D⁰D⁰π) - m(D*⁰) - m(D⁰) (MeV)")
     ev = range(-1,1,length=50).*(5e3*ΓDstar)
     calv_t = ρ3_t.(e2s.(ev))
     plot!(ev, calv_t, lab="ρ₃ bubble")

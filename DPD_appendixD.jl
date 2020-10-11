@@ -4,7 +4,9 @@ using LinearAlgebra
 using Parameters
 using Test
 using TypedTables
+# 
 using Plots
+theme(:wong)
 
 
 # 
@@ -142,4 +144,19 @@ let
     # 
     scatter(ttl_s.α3, ttl_s.θw_inv, lab="")
     scatter!(ttl_s.α3, ttl_s.θw_so2, lab="")
+end
+
+let
+    plot(xlab="γ1", ylab="ϕ3", size=(400,350),
+        title="examples of ϕ3 vs γ1 curves")
+    for _ in 1:3
+        τ1 = randτ1()
+        γv = range(-π,π,length=100)
+        # 
+        τ1v = [(τ1[1:4]..., γ) for γ in γv]
+        τ3v = change_basis_3from1.(τ1v, Ref(ms))
+        #
+        plot!(γv, getindex.(τ3v,3), lab="")
+    end
+    plot!()
 end
