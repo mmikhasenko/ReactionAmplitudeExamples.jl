@@ -25,7 +25,7 @@ const ms = ThreeBodyMasses(mω, mπ⁻, mπ⁰; m0=1.7)
 struct minusone end
 import Base:^
 ^(x::minusone, n::Int) = isodd(n) ? -1 : 1
-macro t_str(s::String)
+macro x_str(s::String)
     minusone()
 end
 
@@ -34,7 +34,7 @@ function ϵWignerD(j0,ϵP,M,λ, ϕ1,cosθ2,ϕ23)
     W⁺ = wignerD(j0, M, λ, ϕ1, cosθ2, ϕ23)
     W⁻ = wignerD(j0,-M, λ, ϕ1, cosθ2, ϕ23)
     # 
-    return W⁺ + ϵP * t"-1"^(j0-M) * W⁻
+    return W⁺ + ϵP * x"-1"^(j0-M) * W⁻
 end
 
 # ϵWignerD(1,1,1,1, 0.3,0.3,0.3)
@@ -43,24 +43,13 @@ end
 H(j1,λ1,j2,λ2,j,l,s) = 
     clebschgordan(j1,λ1,j2,λ2,s,λ1+λ2) *
         clebschgordan(l,0,s,λ1+λ2,j,λ1+λ2)
-# HH(j1,j2,j3,j,l,L,j0) =
-#     clebschgordan(j1,λ1,j2,λ2,s,λ1+λ2) *
-#         clebschgordan(l,0,s,λ1+λ2,j,λ1+λ2)
-#     clebschgordan(j,τ,j3,λ3,S,τ+λ3) *
-#         clebschgordan(L,0,S,τ+λ3,j0,τ+λ3)
-
 
 #############################################################
 
-# with respect to the chain 1
-cosζ_for0_sign(k, σs, msq) = cosθhatk1(k, σs, msq), (k==2 ? :ACW : :CW)
-
-cosζ_fori_sign(k, σs, msq) = cosζ(k,σs, msq), (k==2 ? :ACW : :CW)
-cosζ_forj_sign(k, σs, msq) = cosζ(k,σs, msq), (k==2 ? :ACW : :CW)
-cosζ_fork_sign(k, σs, msq) = cosζ(k,σs, msq), (k==2 ? :ACW : :CW)
-
 abstract type IndexWignerRotation end
-struct TrivialWR <: IndexWignerRotation end
+struct TrivialWR <: IndexWignerRotation
+    k::Int
+end
 struct HatWR{S} <: IndexWignerRotation
     k::Int
 end
@@ -71,10 +60,13 @@ struct ZetaAllWR{S} <: IndexWignerRotation
     k::Int
 end
 
-ispositive(wr::Trivial) = true
+ispositive(wr::TrivialWR) = true
 ispositive(wr::HatWR{S}) where S = S
 ispositive(wr::ZetaRepWR{T,S}) where {T,S} = S
 ispositive(wr::ZetaAllWR{S}) where S = S
+
+ijk(k::Int) = (k+1,k+2,k) |> x->mod.(x,Ref(Base.OneTo(3)))
+ijk(wr::IndexWignerRotation) = ijk(wr.k)
 
 # ind("^0_{1(1)}") -> Trivial()
 # # 
@@ -89,30 +81,99 @@ ispositive(wr::ZetaAllWR{S}) where S = S
 
 seq(i,j) = (j-i) ∈ (1,-2)
 function wr(system_a, reference_b, particle_c=0)
-    system_a == reference_b && return TrivialWR()
+    system_a == reference_b && return TrivialWR(particle_c)
     S = seq(system_a, reference_b)
     A,B = S ? (system_a, reference_b) : (reference_b, system_a)
     # 
-    particle_c == 0 && return Hat{S}(B)
+    particle_c == 0 && return HatWR{S}(A)
     #
-    particle_c ∉ (system_a, reference_b) && return ZetaAll{S}(particle_c)
+    particle_c ∉ (system_a, reference_b) && return ZetaAllWR{S}(particle_c)
     #
-    T = (particle_c == reference_b) ? :S : :D
-    return ZetaRep{T,!(S)}(particle_c)
+    T = (particle_c == A) ? :S : :D
+    return ZetaRepWR{T,!(S)}(particle_c)
 end
 
-wr(3,1)
-wr(1,2)
-# 
-wr(1,1,2)
-wr(1,2,2)
-wr(1,2,1)
-wr(1,3,2)
-wr(2,1,2)
-wr(2,1,1)
-wr(1,2,3)
+# typeof(wr(3,1)) <: Arg0WignerRotation{true}
+# typeof(wr(1,2)) <: Arg0WignerRotation{true}
+# # 
+# typeof(wr(1,1,2)) <: TrivialWignerRotation
+# typeof(wr(1,2,2)) <: Arg2WignerRotation{:samePR,false}
+# typeof(wr(1,2,1)) <: Arg2WignerRotation{:diffPR,false}
+# typeof(wr(1,3,2)) <: Arg3WignerRotation{false}
+# typeof(wr(2,1,2)) <: Arg2WignerRotation{:S,true}
+# typeof(wr(2,1,1)) <: Arg2WignerRotation{:S,true}
+# typeof(wr(1,2,3)) <: Arg2WignerRotation{:S,true}
 
-struct Chain{T}
+
+cosζ(wr::TrivialWR,σs,msq) = 1.0
+
+function cosζ(wr::HatWR,σs,msq)
+    i,j,k = ijk(wr)
+    # 
+    s = msq[4]
+    EE4s = (s+msq[i]-σs[i])*(s+msq[k]-σs[k])
+    pp4s = sqrt(λ(s,msq[i],σs[i])*λ(s,msq[k],σs[k]))
+    rest = σs[j]-msq[i]-msq[k]
+    return (EE4s-2s*rest)/pp4s
+end
+
+sameparticlereference(wr::ZetaRepWR{T,S}) where {T,S} = T==:S
+function cosζ(wr::ZetaRepWR,σs,msq)
+    i,j,k = ijk(wr)
+    # 
+    if !(sameparticlereference(wr))
+        i,j = j,i 
+    end
+    # 
+    msq[k] ≈ 0 && return 1.0
+    # 
+    s = msq[4]
+    EE4mksq = (s+msq[k]-σs[k])*(σs[i]-msq[k]-msq[j])
+    pp4mksq = sqrt(λ(s,msq[k],σs[k])*λ(msq[k],msq[j],σs[i]))
+    rest = σs[j]-s-msq[j]
+    return (2msq[k]*rest+EE4mksq)/pp4mksq
+end
+
+# 
+function cosζ(wr::ZetaAllWR,σs,msq)
+    i,j,k = ijk(wr)
+    # 
+    msq[k] ≈ 0 && return 1.0
+    # 
+    s = msq[4]
+    EE4m1sq = (σs[i]-msq[j]-msq[k])*(σs[j]-msq[k]-msq[i])
+    pp4m1sq = sqrt(λ(σs[i],msq[j],msq[k])*λ(σs[j],msq[k],msq[i]))
+    rest = msq[i]+msq[j]-σs[k]
+    return (2msq[k]*rest+EE4m1sq)/pp4m1sq
+end
+
+
+using Test
+
+let
+    ms = ThreeBodyMasses(m1 = 0.938, m2 = 0.49367, m3 = 0.13957, m0 = 2.46867)
+    #
+    σs = randomPoint(ms)
+
+    @test cosζ(wr(3,1,0),σs,ms^2) ≈ cosθhat31(σs,ms^2)
+    @test cosζ(wr(1,2,0),σs,ms^2) ≈ cosθhat12(σs,ms^2)
+    @test cosζ(wr(2,3,0),σs,ms^2) ≈ cosθhat23(σs,ms^2)
+    # 
+    @test cosζ(wr(2,3,1),σs,ms^2) ≈ cosζ23_for1(σs,ms^2)
+    @test cosζ(wr(1,2,3),σs,ms^2) ≈ cosζ12_for3(σs,ms^2)
+    @test cosζ(wr(3,1,2),σs,ms^2) ≈ cosζ31_for2(σs,ms^2)
+    # # 
+    @test cosζ(wr(2,1,1),σs,ms^2) ≈ cosζ21_for1(σs,ms^2)
+    @test cosζ(wr(2,1,2),σs,ms^2) ≈ ThreeBodyDecay.cosζ21_for2(σs,ms^2)
+    @test cosζ(wr(1,3,1),σs,ms^2) ≈ cosζ13_for1(σs,ms^2)
+    @test cosζ(wr(1,3,3),σs,ms^2) ≈ ThreeBodyDecay.cosζ13_for3(σs,ms^2)
+    @test cosζ(wr(3,2,3),σs,ms^2) ≈ cosζ32_for3(σs,ms^2)
+    @test cosζ(wr(3,2,2),σs,ms^2) ≈ ThreeBodyDecay.cosζ32_for2(σs,ms^2)
+    # 
+    @test sameparticlereference(wr(1,2,1)) == sameparticlereference(wr(2,1,1))
+    @test sameparticlereference(wr(1,2,2)) == sameparticlereference(wr(2,1,2))
+end
+@with_kw struct Chain{T}
     k::Int
     lineshape::T
     jR::Int
@@ -139,6 +200,7 @@ function O(chain::Chain, λ, τ, v)
     @unpack σ1, σ2 = v
     @unpack lineshape, k = chain
     @unpack j0, jR = chain
+    @unpack l,s,L,S = chain
     i,j = ij_from_k(k)
     #
     σs = Invariants(ms; σ1, σ2)
@@ -195,11 +257,12 @@ const ρA = let (mρ,Γρ) = (0.77, 0.15)
 end
 
 
-c = Chain(1,ρA,1, 1, -1, 1, 1)
+
+c = Chain(k=1,lineshape=ρA,jR=1,
+    j0=1,P=1,M=1,ϵ=1,
+    L=1,S=2,l=1,s=0)
 
 model0 = [c]
-
-typeof(model0) <: Vector{Chain{T}} where T
 
 v0 = let 
     ϕ_GJ, cosθ_GJ, ϕ_H = (0.3,0.3,0.3)
@@ -216,5 +279,3 @@ end
 intensity(σs; model, v0) = abs2(amplitude(model, vDalitz(σs.σ1, σs.σ2; v0)))
 
 plot(ms, σs->intensity(σs; model=model0, v0))
-
-
