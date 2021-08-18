@@ -5,6 +5,9 @@ using DataFrames
 using Parameters
 using Plots
 using AlgebraPDF
+using LaTeXStrings
+using DelimitedFiles
+using LinearAlgebra
 
 
 theme(:wong2, frame=:box, grid=false, minorticks=true, 
@@ -53,8 +56,8 @@ qk(k,σs,msq) = sqrt(ThreeBodyDecay.λ(msq[4],σs[k],msq[k])/(4msq[4]))
 
 
 H(j1,λ1,j2,λ2,j,l,s) = 
-    clebschgordan(j1,λ1,j2,λ2,s,λ1+λ2) *
-        clebschgordan(l,0,s,λ1+λ2,j,λ1+λ2)
+    clebschgordan(j1,λ1,j2,-λ2,s,λ1-λ2) *
+        clebschgordan(l,0,s,λ1-λ2,j,λ1-λ2)
 # 
 
 #############################################################
@@ -235,7 +238,7 @@ let
 end
 
 
-JPs = [jp"0+",jp"0+",jp"1+",jp"1-",jp"2+",jp"2-",jp"3+",jp"4+"]
+JPs = [jp"0+",jp"0-"]#,jp"1+",jp"1-",jp"2+",jp"2-",jp"3+",jp"4+"]
 
 
 waveset = DataFrame(
@@ -244,19 +247,91 @@ waveset = DataFrame(
     # ls=NTuple{2,Int}[], LS=NTuple{2,Int}[])
     l=Int[], s=Int[], L=Int[], S=Int[])
 # 
-for (n,a,jp,k) in resonances,
-    JP in JPs
+for JP in JPs,
+    (n,a,jp,k) in resonances
     # 
-    for lsLS in possible_lsLS(k, jp, [jps3...,JP]),
-            M in 0:min(JP.j,1)
+    for M in 0:JP.j,
+        lsLS in possible_lsLS(k, jp, [jps3...,JP])
+        
+        ϵ = 1
+        P = JP.p=='+' ? 1 : -1
+        (M==0 && (ϵ*P*x"-1"^JP.j) == -1) && continue
+        #
+        lsLS.LS[1] > 3 && continue
+        M > 1 && continue
+        # 
         push!(waveset, (; k,lineshape=a,jR=jp.j,
-                    j0=JP.j,P=JP.p=='+',M,ϵ=1,
+                    j0=JP.j,P,M,ϵ,
                     NamedTuple{(:l,:s)}(lsLS.ls)...,
                     NamedTuple{(:L,:S)}(lsLS.LS)...))
     end
 end
 
-tc = Chain(; waveset[waveset.k .== 2,:][15,:]..., k=2)
 
-plot(tc; iσx=2, iσy=3,
-    xlab="M31", ylab="M12", size=(500,450))
+function crossedterm(σs, chain1::Chain, chain2::Chain)
+    chain1.j0 != chain2.j0 && return 0.0im
+    chain1.M  != chain2.M  && return 0.0im
+    chain1.P  != chain2.P  && return 0.0im
+    chain1.ϵ  != chain2.ϵ  && return 0.0im
+    # 
+    @unpack j0 = chain1
+    # 
+    return 1e6*sum(
+        Osym(chain1,λ,τ,σs)'*
+            Osym(chain2,λ,τ,σs)
+                for λ in -j0:j0, τ ∈ -jω:jω)
+end
+
+# c1 = Chain(; waveset[6,:]...)
+# c2 = Chain(; waveset[2,:]...)
+
+# Φij = [
+# three_body_phase_space_integral(σs->1e6*crossedterm(σs, c1, c2), ms)
+#
+# JPMϵξLSls(c1)
+# JPMϵξLSls(c2)
+
+pm(v) = ! iszero(v) ? '+' : '-'
+ξn(c::Chain) = c.k==1 ? ["f_0", "\\rho", "f_2"][c.jR+1] : ["?", "b_1", "?"][c.jR+1]
+πn(c::Chain) = c.k==1 ? "\\omega" : "\\pi"
+Lwave(l::Int) = l ≤ 6 ? ['S','P','D','F','G','H','I'][l+1] : string(l)[1]
+# 
+JPCMϵ(c::Chain) = "$(c.j0)^{$(pm(c.P))+} $(c.M)^{$(pm(c.ϵ))}"
+ξL(c::Chain) = "$(ξn(c))$(πn(c))\\,\\,$(Lwave(c.L))"
+LSls(c::Chain) = "(L=$(c.L),S=$(c.S))  (l=$(c.l),s=$(c.s))"
+
+import ThreeBodyDecay:jp
+jp(c::Chain) = jp(c.j0,c.P==0 ? '-' : '+')
+
+# all
+Nwaves = size(waveset,1)
+Φij = zeros(Complex{Float64}, Nwaves,Nwaves)
+for i in 1:Nwaves, j in 1:Nwaves
+    ci = Chain(; waveset[i,:]...)
+    cj = Chain(; waveset[j,:]...)
+    Φij[i,j] = three_body_phase_space_integral(σs->crossedterm(σs, ci, cj), ms)
+end
+
+function enhance(m::Matrix)
+    d = Diagonal(1 ./ sqrt.(diag(m)))
+    return d * m * d
+end
+
+O(Chain(; waveset[3,:]...), 0, 1, randomPoint(ms))
+
+wavelabels = latexstring.(ξL.([Chain(; waveset[i,:]...) for i in 1:Nwaves]))
+ifsmallgiveanan(v; cut=1e-8) = abs(v)< cut ? NaN : v
+
+heatmap(1:Nwaves, 1:Nwaves, ifsmallgiveanan.(real.(enhance(Φij))),
+    yticks=(1:Nwaves, wavelabels),
+    xticks=(1:Nwaves, wavelabels), c=:diverging_bwg_20_95_c41_n256, clim=(-1,1))
+#
+
+writedlm("Phi_ij.txt",
+    [real.(Φij);
+     imag.(Φij)])
+
+# 
+RI = readdlm("Phi_ij.txt")
+Nwaves = size(RI,2)
+Φij = RI[Nwaves,:] .+ 1im .* RI[(Nwaves+1):2Nwaves,:]
