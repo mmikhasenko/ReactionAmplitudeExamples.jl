@@ -8,6 +8,7 @@ using AlgebraPDF
 using LaTeXStrings
 using DelimitedFiles
 using LinearAlgebra
+import Plots.PlotMeasures.mm
 
 
 theme(:wong2, frame=:box, grid=false, minorticks=true, 
@@ -26,6 +27,10 @@ const Γb1 = 0.142 # ± 0.009
 # const mX = 1.7 # GeV
 const ms = ThreeBodyMasses(mω, mπ⁻, mπ⁰; m0=1.7)
 const jps3 = (jp(jω,'-'), jp"0-", jp"0-")
+
+#############################################################
+
+ifsmallgiveanan(v; cut=1e-8) = abs(v)< cut ? NaN : v
 
 #############################################################
 
@@ -83,6 +88,20 @@ function nt(c::Chain)
     NamedTuple{ks}(getfield(c,k) for k in ks)
 end
 
+import ThreeBodyDecay:jp
+jp(c::Chain) = jp(c.j0,c.P==0 ? '-' : '+')
+
+
+pm(v) = ! iszero(v) ? '+' : '-'
+ξn(c::Chain) = c.k==1 ? ["f_0", "\\rho", "f_2", "\\rho_3"][c.jR+1] : ["?", "b_1", "?"][c.jR+1]
+πn(c::Chain) = c.k==1 ? "\\omega" : "\\pi"
+Lwave(l::Int) = l ≤ 6 ? ['S','P','D','F','G','H','I'][l+1] : string(l)[1]
+# 
+JPCMϵ(c::Chain) = "$(c.j0)^{$(pm(c.P))+} $(c.M)^{$(pm(c.ϵ))}"
+ξL(c::Chain) = "$(ξn(c))$(πn(c))\\,\\,$(Lwave(c.L))"
+ξLS(c::Chain) = "\\left[$(ξn(c))$(πn(c))\\right]_{$(c.S)}\\,\\,$(Lwave(c.L))"
+# 
+JPCMϵξL(c::Chain) = JPCMϵ(c)*" "*ξL(c)
 
                                                    
 #                                  _|            _|  
@@ -161,7 +180,6 @@ function amplitude10d(model::AbstractVector{Chain{T}} where T, v)
     return a
 end
 
-
 # test
 
 testchain = Chain(k=1,lineshape=x->BW(x,0.77,0.15),jR=1,
@@ -188,8 +206,6 @@ intensity10d(σs; model, v0) = abs2(amplitude10d(model, vDalitz(σs.σ1, σs.σ2
 
 # plots Dalitz
 plot(ms, σs->intensity10d(σs; model=testmodel, v0=testvars))
-
-
 
 
 
@@ -225,7 +241,7 @@ fb1 = FBreitWigner((;mb1, Γb1))
 resonances = [
     (n=:ρ,  a = fρ,  jp=jp"1-", k=1),
     (n=:f2, a = ff2, jp=jp"2+", k=1),
-    (n=:ρ3, a = fρ3, jp=jp"2+", k=1),
+    (n=:ρ3, a = fρ3, jp=jp"3-", k=1),
     (n=:b1, a = fb1, jp=jp"1+", k=2),
 ]
 
@@ -237,34 +253,31 @@ let
     plot!()
 end
 
-
-JPs = [jp"0+",jp"0-"]#,jp"1+",jp"1-",jp"2+",jp"2-",jp"3+",jp"4+"]
-
-
-waveset = DataFrame(
-    k=Int[], lineshape=AbstractFunctionWithParameters[], jR=Int[],
-    j0=Int[], P=Int[], M=Int[], ϵ=Int[],
-    # ls=NTuple{2,Int}[], LS=NTuple{2,Int}[])
-    l=Int[], s=Int[], L=Int[], S=Int[])
-# 
-for JP in JPs,
-    (n,a,jp,k) in resonances
+function selectwaveset(JP; Mmax=1, Lmax=3, ϵ=1)
+    waveset = DataFrame(
+        k=Int[], lineshape=AbstractFunctionWithParameters[], jR=Int[],
+        j0=Int[], P=Int[], M=Int[], ϵ=Int[],
+        # ls=NTuple{2,Int}[], LS=NTuple{2,Int}[])
+        l=Int[], s=Int[], L=Int[], S=Int[])
     # 
-    for M in 0:JP.j,
-        lsLS in possible_lsLS(k, jp, [jps3...,JP])
-        
-        ϵ = 1
-        P = JP.p=='+' ? 1 : -1
-        (M==0 && (ϵ*P*x"-1"^JP.j) == -1) && continue
-        #
-        lsLS.LS[1] > 3 && continue
-        M > 1 && continue
+    for (n,a,jp,k) in resonances
         # 
-        push!(waveset, (; k,lineshape=a,jR=jp.j,
-                    j0=JP.j,P,M,ϵ,
-                    NamedTuple{(:l,:s)}(lsLS.ls)...,
-                    NamedTuple{(:L,:S)}(lsLS.LS)...))
+        for M in 0:JP.j,
+            lsLS in possible_lsLS(k, jp, [jps3...,JP])
+            
+            P = JP.p=='+' ? 1 : -1
+            (M==0 && (ϵ*P*x"-1"^JP.j) == -1) && continue
+            #
+            lsLS.LS[1] > Lmax && continue
+            M > Mmax && continue
+            # 
+            push!(waveset, (; k,lineshape=a,jR=jp.j,
+                        j0=JP.j,P,M,ϵ,
+                        NamedTuple{(:l,:s)}(lsLS.ls)...,
+                        NamedTuple{(:L,:S)}(lsLS.LS)...))
+        end
     end
+    return waveset
 end
 
 
@@ -282,26 +295,20 @@ function crossedterm(σs, chain1::Chain, chain2::Chain)
                 for λ in -j0:j0, τ ∈ -jω:jω)
 end
 
-# c1 = Chain(; waveset[6,:]...)
-# c2 = Chain(; waveset[2,:]...)
 
-# Φij = [
-# three_body_phase_space_integral(σs->1e6*crossedterm(σs, c1, c2), ms)
-#
-# JPMϵξLSls(c1)
-# JPMϵξLSls(c2)
 
-pm(v) = ! iszero(v) ? '+' : '-'
-ξn(c::Chain) = c.k==1 ? ["f_0", "\\rho", "f_2"][c.jR+1] : ["?", "b_1", "?"][c.jR+1]
-πn(c::Chain) = c.k==1 ? "\\omega" : "\\pi"
-Lwave(l::Int) = l ≤ 6 ? ['S','P','D','F','G','H','I'][l+1] : string(l)[1]
-# 
-JPCMϵ(c::Chain) = "$(c.j0)^{$(pm(c.P))+} $(c.M)^{$(pm(c.ϵ))}"
-ξL(c::Chain) = "$(ξn(c))$(πn(c))\\,\\,$(Lwave(c.L))"
-LSls(c::Chain) = "(L=$(c.L),S=$(c.S))  (l=$(c.l),s=$(c.s))"
 
-import ThreeBodyDecay:jp
-jp(c::Chain) = jp(c.j0,c.P==0 ? '-' : '+')
+JPs = [jp"0+"]#,jp"1+",jp"1-",jp"2+",jp"2-",jp"3+",jp"4+"]
+
+# JP in JPs,
+waveset = selectwaveset(jp"0+")
+# waveset = selectwaveset(jp"1-")
+
+function enhance(m::Matrix)
+    d = Diagonal(1 ./ sqrt.(diag(m)))
+    return d * m * d
+end
+
 
 # all
 Nwaves = size(waveset,1)
@@ -312,26 +319,11 @@ for i in 1:Nwaves, j in 1:Nwaves
     Φij[i,j] = three_body_phase_space_integral(σs->crossedterm(σs, ci, cj), ms)
 end
 
-function enhance(m::Matrix)
-    d = Diagonal(1 ./ sqrt.(diag(m)))
-    return d * m * d
-end
-
-O(Chain(; waveset[3,:]...), 0, 1, randomPoint(ms))
-
 wavelabels = latexstring.(ξL.([Chain(; waveset[i,:]...) for i in 1:Nwaves]))
-ifsmallgiveanan(v; cut=1e-8) = abs(v)< cut ? NaN : v
-
 heatmap(1:Nwaves, 1:Nwaves, ifsmallgiveanan.(real.(enhance(Φij))),
     yticks=(1:Nwaves, wavelabels),
-    xticks=(1:Nwaves, wavelabels), c=:diverging_bwg_20_95_c41_n256, clim=(-1,1))
+    xticks=(1:Nwaves, wavelabels), xrotation = 90,
+    c=:diverging_bwg_20_95_c41_n256, clim=(-1,1),
+    size=(Nwaves*40+60, Nwaves*40), bottom_margin=10mm,
+    title=latexstring("\\mathrm{Sectors}\\,\\,J^{PC}:"*prod(" $(JP.j)^{$(JP.p)+}" for JP in JPs)))
 #
-
-writedlm("Phi_ij.txt",
-    [real.(Φij);
-     imag.(Φij)])
-
-# 
-RI = readdlm("Phi_ij.txt")
-Nwaves = size(RI,2)
-Φij = RI[Nwaves,:] .+ 1im .* RI[(Nwaves+1):2Nwaves,:]
