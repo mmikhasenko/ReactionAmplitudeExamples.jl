@@ -16,8 +16,9 @@ end
 # ╔═╡ 43870f95-68c5-459b-b18c-e8571b87ed2d
 begin
     import Pkg
+	Pkg.activate(mktempdir())
     Pkg.add([
-			Pkg.PackageSpec(url="https://github.com/mmikhasenko/Triangles"))
+			Pkg.PackageSpec(url="https://github.com/mmikhasenko/Triangles"),
 			Pkg.PackageSpec("Plots"),
 			Pkg.PackageSpec("LaTeXStrings"),
 			Pkg.PackageSpec("PlutoUI")])
