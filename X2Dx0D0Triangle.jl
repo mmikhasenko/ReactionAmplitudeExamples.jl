@@ -57,7 +57,7 @@ begin
 end
 
 # ╔═╡ d20805dc-337f-4055-b2f2-4081dead3c27
-tr(δe,mpi,Γ=ΓDˣ⁰) = 
+tr00(δe,mpi,Γ=ΓDˣ⁰) = 
 	triangleloop(
 		mDˣ⁰^2-1im*mDˣ⁰*Γ, mD⁰^2, mpi^2, mDˣ⁰^2, mD⁰^2, (mDˣ⁰+mD⁰+δe*1e-3)^2)
 
@@ -67,10 +67,24 @@ tr(δe,mpi,Γ=ΓDˣ⁰) =
 # ╔═╡ 660cc2c4-174e-4634-9925-c521231cbfc7
 begin
 	plot()
-	plot!(δe->imag(tr(δe,_mπ)), -1.5,1.5,
-		lab=L"\Gamma_{D^{*0}}=80\,\mathrm{keV}")
-	plot!(δe->imag(tr(δe,_mπ,1e-7)), -1.5,1.5, 
+	plot!(δe->imag(tr00(δe,_mπ)), -1.5,1.5,
+		lab=L"\Gamma_{D^{*0}}=55\,\mathrm{keV}")
+	plot!(δe->imag(tr00(δe,_mπ,1e-7)), -1.5,1.5, 
 		lab=L"\Gamma_{D^{*0}}=0\,\mathrm{keV}")
+end
+
+# ╔═╡ 048ab595-616e-40b3-be3c-47281739321b
+trp0(δe,mpi,Γ=ΓDˣ⁰) = 
+	triangleloop(
+		mDˣ⁺^2-1im*mDˣ⁺*Γ, mD⁰^2, mpi^2, mDˣ⁺^2, mD⁰^2, (mDˣ⁺+mD⁰+δe*1e-3)^2)
+
+# ╔═╡ 6a2f2e8f-5abf-478b-9cbc-b523ec949684
+begin
+	plot()
+	plot!(δe->imag(trp0(δe,_mπ)), -1.5,1.5,
+		lab=L"\Gamma_{D^{*+}}=83\,\mathrm{keV}")
+	plot!(δe->imag(trp0(δe,_mπ,1e-7)), -1.5,1.5, 
+		lab=L"\Gamma_{D^{*+}}=0\,\mathrm{keV}")
 end
 
 # ╔═╡ Cell order:
@@ -82,3 +96,5 @@ end
 # ╠═d20805dc-337f-4055-b2f2-4081dead3c27
 # ╠═11c03102-842f-42f1-adeb-327c2f6156eb
 # ╠═660cc2c4-174e-4634-9925-c521231cbfc7
+# ╠═048ab595-616e-40b3-be3c-47281739321b
+# ╠═6a2f2e8f-5abf-478b-9cbc-b523ec949684
