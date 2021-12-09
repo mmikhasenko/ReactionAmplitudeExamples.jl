@@ -16,6 +16,9 @@ md"""
 # $B^-\to\Lambda_c^+\Lambda_c^- K^-$ analysis model
 """
 
+# ╔═╡ 57d1d6e0-ecce-449d-8590-fb74a5cd7b2a
+# 2021-12-09 Misha Mikhasenko
+
 # ╔═╡ 8bd14db2-c585-48b5-8234-b30691ee96bf
 theme(:wong2, minorticks=true, grid=false, frame=:box,
     guidefontvalign=:top, guidefonthalign=:right,
@@ -57,9 +60,6 @@ begin
 	const Γ₂ = 15.1673
 end;
 
-# ╔═╡ f7ec33d9-791c-4600-9f67-418b88c9684a
-
-
 # ╔═╡ 7cc647e1-78cb-4d05-b91c-7a4e15fdab51
 begin
 	λ(x,y,z) = x^2+y^2+z^2-2x*y-2y*z-2z*x
@@ -95,15 +95,13 @@ md"""
 """
 
 # ╔═╡ 827401cd-8f8f-4114-9abb-17d054d7f122
-with_terminal() do
-	@show g₁, sqrt(36.4 * m₁)
-	@show g₁, sqrt(118.2 * m₂)
-end;
+[sqrt(36.4 * m₁)  => g₁,
+ sqrt(118.2 * m₂) => g₂]
 
 # ╔═╡ b8f77e25-a11d-497b-b5ec-336c5ec35a93
 begin
 	const c₁ = 1.0
-	const c₂ = 1.6
+	const c₂ = 1.6 # changed with respect to the table to make the second peak high
 end;
 
 # ╔═╡ b6c97a78-2023-4a63-a349-e720f23ca1d4
@@ -1035,6 +1033,7 @@ version = "0.9.1+5"
 
 # ╔═╡ Cell order:
 # ╟─7c8809de-7b98-4cdf-ab74-a3b057581e69
+# ╠═57d1d6e0-ecce-449d-8590-fb74a5cd7b2a
 # ╠═383d1f00-58d9-11ec-3314-e3022e5bfa19
 # ╠═8bd14db2-c585-48b5-8234-b30691ee96bf
 # ╟─85ddd5aa-0cf7-4881-b876-4be0ce719a6f
@@ -1042,7 +1041,6 @@ version = "0.9.1+5"
 # ╠═c303d734-cdb4-44b6-8757-2e245b6a4965
 # ╟─bde6a7f4-45a5-4861-bad4-f3ba16dbc1a0
 # ╠═9b5beb1d-99dd-44ec-8517-9906967f6be4
-# ╠═f7ec33d9-791c-4600-9f67-418b88c9684a
 # ╠═7cc647e1-78cb-4d05-b91c-7a4e15fdab51
 # ╠═1ad2cc9c-3e26-45e1-b5a4-fbbd2614fe69
 # ╠═857459e4-278a-4d59-ad4f-69846d2a6b45
