@@ -40,30 +40,17 @@ begin
 end ;
 
 # ╔═╡ fbadb547-b5d7-4f4e-af0a-2af068c15e6a
-const ms = ThreeBodyMasses(mp, mK, mπ; m0=mΛc)
+const ms = ThreeBodyMasses(mp, mπ, mK; m0=mΛc)
 
 # ╔═╡ c2d8a53b-50f9-40af-a33c-96b1aeef24cf
-function field((σ1,σ3); wr=wr(3,1,0))
-	σs = Invariants(ms; σ3,σ1)
+function field((σ1,σ2); wr=wr(3,1,0))
+	σs = Invariants(ms; σ2,σ1)
 	Kibble(σs, ms^2) > 0 && return (NaN,NaN)
 	c = cosζ(wr, σs, ms^2)
-	(c, sqrt(1-c^2) * (ispositive(wr) ? 1 : -1))
-end
-
-# ╔═╡ 4b4d6a4b-862a-40cb-980b-6e604638b29e
-begin
-	function unscale((x,y))
-		lx = lims1(ms)
-		ly = lims3(ms)
-		(lx[1] + (lx[2]-lx[1])*x,
-		 ly[1] + (ly[2]-ly[1])*y)
-	end
-	function scale((u,v))
-		lx = lims1(ms)
-		ly = lims3(ms)
-		((u-lx[1])/(lx[2]-lx[1]),
-		 (v-ly[1])/(ly[2]-ly[1]))
-	end
+	# 
+	xscale = diff([lims1(ms)...])[1]
+	yscale = diff([lims2(ms)...])[1]
+	(xscale, yscale) .* (c, sqrt(1-c^2) * (ispositive(wr) ? 1 : -1))
 end
 
 # ╔═╡ 4d1a05dd-3477-401f-94f4-e2f8077d0603
@@ -77,24 +64,24 @@ end
 
 # ╔═╡ 08af1f39-dcfe-4a19-b408-827c32ba7c4f
 let length=18
-	xv = range(0,1; length)
-	yv = range(0,1; length)
+	xv = range(lims1(ms)...; length)
+	yv = range(lims2(ms)...; length)
 	xyv = Iterators.product(xv, yv)
 	plot(layout=grid(1,2), size=(700,350),
 		title=[L"\alpha(\Delta)" L"\alpha(\Lambda)"],
-		xlab=L"\sim m(\pi K)", ylab=L"\sim m(pK)",
-		xaxis=nothing, yaxis=nothing, bottom_margin=3mm)
+		xlab=L"m(\pi K)\,\,(\mathrm{GeV})", ylab=L"m(pK)\,\,(\mathrm{GeV})", bottom_margin=3mm)
 	# 
 	quiver!(sp=1, getindex.(xyv,1), getindex.(xyv,2),
-		quiver=(x,y)->field(unscale((x,y)); wr=wr(3,1,0)) ./ length,
-		c=2, arrow=(:closed,), aspectratio=1)
-	plot!(sp=1, map(scale, transform2tuple(border31(ms)...)), lc=:black)
+		quiver=(x,y)->field((x,y); wr=wr(3,1,0)) ./ length,
+		c=2, arrow=(:closed,),
+		aspectratio=diff([lims1(ms)...])[1] / diff([lims2(ms)...])[1])
+	plot!(sp=1, swap.(transform2tuple(border12(ms)...)), lc=:black)
 	# 
 	quiver!(sp=2, getindex.(xyv,1), getindex.(xyv,2),
-		quiver=(x,y)->field(unscale((x,y)); wr=wr(2,1,0)) ./ length,
-		c=3, arrow=(:closed,), aspectratio=1)
-	plot!(sp=2, map(scale, transform2tuple(border31(ms)...)), lc=:black)
-	# 
+		quiver=(x,y)->field((x,y); wr=wr(2,1,0)) ./ length,
+		c=3, arrow=(:closed,),
+		aspectratio=diff([lims1(ms)...])[1] / diff([lims2(ms)...])[1])
+	plot!(sp=2, swap.(transform2tuple(border12(ms)...)), lc=:black)
 end
 
 # ╔═╡ Cell order:
@@ -103,6 +90,5 @@ end
 # ╠═b347c97f-facf-4281-be1b-c3ebc148bafd
 # ╠═fbadb547-b5d7-4f4e-af0a-2af068c15e6a
 # ╠═c2d8a53b-50f9-40af-a33c-96b1aeef24cf
-# ╟─4b4d6a4b-862a-40cb-980b-6e604638b29e
 # ╟─4d1a05dd-3477-401f-94f4-e2f8077d0603
 # ╠═08af1f39-dcfe-4a19-b408-827c32ba7c4f
