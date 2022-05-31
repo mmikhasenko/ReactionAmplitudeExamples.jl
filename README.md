@@ -1,7 +1,7 @@
 # Examples
 A collection of simple examples to plot/calculate with julia
 
-Most of the files are Pluto notebooks available with the [Git Pages](https://mmikhasenko.github.io/examples/)
+Most of the files are Pluto notebooks available with the [Git Pages](https://mmikhasenko.github.io/ReactionAmplitudeExamples.jl/)
 
 You can run them as a julia scripts, or interactively in a browser.
 
