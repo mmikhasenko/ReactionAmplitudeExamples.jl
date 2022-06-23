@@ -31,6 +31,9 @@ cg(j1,m1,j2,m2,j,m) = clebsch_gordan(Sym(j1),j2,j,m1,m2,m)
 # ╔═╡ 651beffe-9745-40f8-8b84-695a8a7f1127
 @vars θ positive=true ;
 
+# ╔═╡ 6b80758c-aba1-42f2-99fe-643ff35be63d
+wignerd(3,2,1,θ)
+
 # ╔═╡ 117b8fa8-7d95-438b-be4d-209dbb1d60b7
 const half = Sym(1)/2 ;
 
@@ -1001,6 +1004,7 @@ version = "0.9.1+5"
 # ╠═841ee210-9f96-11ec-1cd5-7b199c83ce2a
 # ╠═06897cfa-9448-45f4-a441-3a25cbb997f4
 # ╠═582a3caf-7c3d-4eb2-beef-ad71c2dcc570
+# ╠═6b80758c-aba1-42f2-99fe-643ff35be63d
 # ╠═925c5d49-cd77-476a-8a07-2a92a2a8fe0d
 # ╠═651beffe-9745-40f8-8b84-695a8a7f1127
 # ╠═117b8fa8-7d95-438b-be4d-209dbb1d60b7
