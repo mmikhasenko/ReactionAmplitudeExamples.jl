@@ -22,18 +22,15 @@ end
 
 # ╔═╡ 3b6671a0-d32d-11ea-2ea7-25f28d17f69b
 md"
-## Breit-Wigner amplitude with energy-dependent width
-The amplitude is defined as follows:
+# Spuries pole of the Breit-Wigner
 
-``
-A(s) = \frac{1}{m_R^2-s-im_R\Gamma(s)},
-``
+The amplitude is the standard RBW
+
+$A(s) = \frac{1}{m_R^2-s-im_R\Gamma(s)}\,,$
 
 where the width incorporates the energy dependence from the phase space available for the decay:
 
-``
-\Gamma(s) = \frac{g^2}{16\pi s}\sqrt{(s-(m_1+m_2)^2)(s-(m_1-m_2)^2)},
-``
+$\Gamma(s) = \frac{g^2}{16\pi s}\sqrt{(s-(m_1+m_2)^2)(s-(m_1-m_2)^2)}\,,$
 "
 
 # ╔═╡ a6a42b20-d32c-11ea-172f-79bd3b94cb58
