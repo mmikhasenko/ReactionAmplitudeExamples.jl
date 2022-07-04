@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.14.0
+# v0.19.4
 
 using Markdown
 using InteractiveUtils
@@ -7,14 +7,23 @@ using InteractiveUtils
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
     quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
         local el = $(esc(element))
-        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : missing
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
         el
     end
 end
 
 # ╔═╡ 3d7df13c-75a7-46ac-b28e-18f263de6af7
 begin
+	using Pkg
+	Pkg.add([
+		Pkg.PackageSpec(url="https://github.com/mmikhasenko/ThreeBodyDecay.jl"),
+		Pkg.PackageSpec("PartialWaveFunctions"),
+		Pkg.PackageSpec("Plots"),
+		Pkg.PackageSpec("PlutoUI")
+		])
+	
 	using ThreeBodyDecay
 	using PartialWaveFunctions
 	using Plots
@@ -25,6 +34,13 @@ end
 md"""
 ### Angular distribution for $J/\psi\to (\pi\pi)_L\,\pi\,L$-wave
 """
+
+# ╔═╡ 66d3aa29-51c8-49bd-8df3-bc6469d18901
+theme(:wong2, minorticks=true, grid=false, frame=:box,
+    guidefontvalign=:top, guidefonthalign=:right,
+    foreground_color_legend = nothing,
+    legendfontsize=9, legend =:topright,
+    xlim=(:auto,:auto), ylim=(:auto,:auto))
 
 # ╔═╡ 54f6f89e-f496-4ad9-8047-44e9dbd43ef4
 A(z,s,λ) = (2s+1)*wignerd(s,λ,0,z)*clebschgordan(s,0,s,λ,1,λ)
@@ -83,16 +99,16 @@ md"""
 # ╔═╡ c9418469-8030-4f2d-bbd6-ce0e532170cb
 function A3b(σs, ν; p)
 	j0 = 1
-	BWs = BW.(σs, p.m, p.Γ)
+	BWs = map(σ->BW(σ, p.m, p.Γ), σs)
 	sum(BWs[1]*kronecker(ν,λ)*A(cosθ23(σs, ms^2),p.s,λ) + 
-		BWs[2]*wignerd(j0,ν,λ,cosθhat12(σs, ms^2))*A(cosθ31(σs, ms^2),p.s,λ) *
+		BWs[2]*wignerd(j0,ν,λ, cosζ12_for0(σs, ms^2))*A(cosθ31(σs, ms^2),p.s,λ) *
 			phase(2ν,2λ) +
-		BWs[3]*wignerd(j0,ν,λ,cosθhat31(σs, ms^2))*A(cosθ12(σs, ms^2),p.s,λ)
+		BWs[3]*wignerd(j0,ν,λ, cosζ31_for0(σs, ms^2))*A(cosθ12(σs, ms^2),p.s,λ)
 			for λ in -j0:j0)
 end
 
 # ╔═╡ ae5d5bcf-6b51-41df-8b67-cd03611c509f
-I3b(σs; p) = sum(abs2, A3b(σs, ν; p=p) for ν in -1:1)
+I3b(σs; p) = sum(abs2, A3b(σs, ν; p) for ν in -1:1)
 
 # ╔═╡ aa65878e-b76e-4c44-8d89-5bd9a99bc2b4
 begin
@@ -107,7 +123,8 @@ end
 
 # ╔═╡ Cell order:
 # ╟─8dba788b-f74f-441c-a712-6116761a4a83
-# ╟─3d7df13c-75a7-46ac-b28e-18f263de6af7
+# ╠═3d7df13c-75a7-46ac-b28e-18f263de6af7
+# ╠═66d3aa29-51c8-49bd-8df3-bc6469d18901
 # ╠═54f6f89e-f496-4ad9-8047-44e9dbd43ef4
 # ╠═a8c0f283-92fe-4433-b5dc-341b14c7a0a2
 # ╟─9dcf87e4-beff-4b66-9118-6b6656e35e46
@@ -120,4 +137,4 @@ end
 # ╟─baa08139-93f6-4c6f-9fae-c897edd4e447
 # ╠═c9418469-8030-4f2d-bbd6-ce0e532170cb
 # ╠═ae5d5bcf-6b51-41df-8b67-cd03611c509f
-# ╟─aa65878e-b76e-4c44-8d89-5bd9a99bc2b4
+# ╠═aa65878e-b76e-4c44-8d89-5bd9a99bc2b4
