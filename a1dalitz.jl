@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.18.0
+# v0.16.1
 
 using Markdown
 using InteractiveUtils
@@ -96,7 +96,7 @@ const dc = [DecayChain(; k, Xlineshape=BW, two_s=1|>x2,
 	tbs) for k in 1:2]
 
 # ╔═╡ 3e672231-c34c-4c99-8d68-2802607a20cc
-A(x...) = amplitude(x..., dc[1]) - amplitude(x..., dc[2])
+A(x...) = amplitude(dc[1], x...) - amplitude(dc[2],x...)
 
 # ╔═╡ 0cae4684-f9ef-4da2-8020-ec43e3b71078
 const I = summed_over_polarization(abs2 ∘ A, tbs.two_js)
@@ -105,9 +105,6 @@ const I = summed_over_polarization(abs2 ∘ A, tbs.two_js)
 begin
 	plot(I, ms, aspectratio=1)
 	plot!(border12(ms), l=(4,:black), lab="", aspectratio=1)
-	# 
-	savefig("a1dalitzplotwithrho_spin.pdf")
-	plot!()
 end
 
 # ╔═╡ Cell order:
