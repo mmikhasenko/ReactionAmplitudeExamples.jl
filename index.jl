@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.4
+# v0.19.5
 
 using Markdown
 using InteractiveUtils
@@ -14,7 +14,7 @@ end
 # ╔═╡ c5461c4b-e7c1-4b3c-ad2b-3b8e6dad0c97
 begin
 	notebooklist = PlutoSliderServer.find_notebook_files_recursive(@__DIR__)
-	sort!(notebooklist; by=x->mtime(joinpath(@__DIR__, x)))
+	sort!(notebooklist; by=x->mtime(joinpath(@__DIR__, x)), rev=true)
 	filter!(x->x!="index.jl", notebooklist)
 end ;
 
@@ -58,7 +58,7 @@ PlutoSliderServer = "~0.3.11"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.2"
+julia_version = "1.7.3"
 manifest_format = "2.0"
 
 [[deps.AbstractPlutoDingetjes]]
@@ -122,7 +122,7 @@ deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[deps.Downloads]]
-deps = ["ArgTools", "LibCURL", "NetworkOptions"]
+deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 
 [[deps.Expat_jll]]
