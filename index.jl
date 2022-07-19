@@ -15,7 +15,7 @@ end
 # ╔═╡ c5461c4b-e7c1-4b3c-ad2b-3b8e6dad0c97
 begin
 	notebooklist = PlutoSliderServer.find_notebook_files_recursive(@__DIR__)
-	sort!(notebooklist; by=x->mtime(joinpath(@__DIR__, x)), rev=true)
+	sort!(notebooklist)
 	filter!(x->x!="index.jl", notebooklist)
 end ;
 
@@ -25,8 +25,7 @@ let
 	for (i,name) in enumerate(notebooklist)
 		_name = PlutoSliderServer.without_pluto_file_extension(name)
 		_name_html = _name * ".html"
-		modtime = Dates.unix2datetime(mtime(joinpath(@__DIR__, name))) 
-		content *= " $(i). [**`$(_name)`**]($(_name_html)) (modified on $(Date(modtime)))\n"
+		content *= " $(i). [**`$(_name)`**]($(_name_html))\n"
 	end
 	Markdown.parse(content)
 end
