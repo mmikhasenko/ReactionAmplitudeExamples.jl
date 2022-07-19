@@ -5,6 +5,7 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ d8489d70-cf9f-11ec-1f26-0b616e422d52
+# ╠═╡ show_logs = false
 begin
 	import Pkg
 	Pkg.add([
@@ -99,7 +100,8 @@ begin
 	# 
 	const Wave = NamedTuple{(:lineshape3b, :j0, :P0, :k, :lineshape, :j, :parity)}
 	ms(m0) = ThreeBodyMasses(mπ,mK,mK; m0)
-	function amplitude(wave::Wave, s::Float64, σs, λ::Int)
+	# 
+	function wave2decaychain(wave::Wave, s::Float64)
 		@unpack lineshape3b, j0, P0 = wave
 		@unpack k, lineshape, j, parity = wave
 		# 
@@ -109,7 +111,11 @@ begin
 		Ps = ('-','-','-',P0)
 		d = DecayChainLS(2, lineshape; two_s=2j, parity, Ps, tbs)
 		Xlineshape = X3b(; lineshape, m0, mk=_ms[k], L=div(d.HRk.two_ls[1],2))
-		dX = DecayChainLS(k, Xlineshape; two_s=2j, parity, Ps, tbs)
+		return DecayChainLS(k, Xlineshape; two_s=2j, parity, Ps, tbs)
+	end
+	function amplitude(wave::Wave, s::Float64, σs, λ::Int)
+		@unpack lineshape3b = wave
+		dX = wave2decaychain(wave, s)
 		return Osym(dX,σs,λ)*amplitude(lineshape3b,s)
 	end
 end
@@ -117,8 +123,9 @@ end
 # ╔═╡ 3e672231-c34c-4c99-8d68-2802607a20cc
 function Osym(dc::T, σs, λ::Int) where T<:DecayChain
 	dc.k == 1 && return amplitude(dc, σs, (0,0,0,2λ))
-	dc.k == 2 && return amplitude(dc, σs, (0,0,0,2λ)) -
-			minusone()^λ * amplitude(DecayChain(dc, k=3), σs, (0,0,0,2λ))
+	dc.k == 2 && return amplitude(dc, σs, (0,0,0,2λ)) +
+			minusone()^div(dc.two_s,2) * 
+				amplitude(DecayChain(dc, k=3), σs, (0,0,0,2λ))
 	error("Unaccounted case, k=$(dc.k)")
 end
 
