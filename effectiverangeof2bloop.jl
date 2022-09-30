@@ -69,7 +69,7 @@ begin
 end
 
 # ╔═╡ 934ce5cc-6033-48a6-89ce-5b576acc9de1
-heatmap(1:0.01:3, -1:0.01:1, (x,y)->arg(ρ(x+1im*y)), c=:twilight)
+heatmap(-0.1:0.01:3, -1:0.01:1, (x,y)->arg(1im*ρ(x+1im*y)), c=:twilight)
 
 # ╔═╡ 72a252a4-ba7d-42ad-b730-262aab8d0cd7
 md"""
@@ -101,7 +101,7 @@ It is a cut starting from the threshold stright to the right along the real axis
 """
 
 # ╔═╡ 7b820569-580e-4ae5-8c58-60a72fdd1711
-heatmap(1:0.01:3, -1:0.01:1, (x,y)->arg(C(x+1im*y)), c=:twilight)
+heatmap(-0.1:0.01:3, -1:0.01:1, (x,y)->arg(C(x+1im*y)), c=:twilight)
 
 # ╔═╡ 74be6176-f715-414f-a1d8-d5a954ae4825
 begin
