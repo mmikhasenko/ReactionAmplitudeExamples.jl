@@ -32,6 +32,9 @@ md"""
 via intermediate $1/2$ and $3/2$
 """
 
+# ╔═╡ ee76c86b-0d6c-423d-9a5c-870821bb68c8
+# 2022-10-07 Misha Mikhaseko
+
 # ╔═╡ 0c1ce318-7106-41fc-94a1-af5cd0e1e738
 begin
 	@with_kw struct Chain{T}
@@ -62,7 +65,7 @@ dl(j0,l,λ,ν; ξ::Chain) =
 
 # ╔═╡ 90156e3d-4c68-4069-99a5-941a23682342
 let # call the function for symbols
-	λ, ν, j, l, L, j0 = @vars λ ν j l L j_0
+	@syms  λ ν j l L j0=>"j_0"
 	I = dl(j0,L,λ,ν; ξ = Chain(; j, l))
 	# 
 	Markdown.parse(
@@ -82,7 +85,7 @@ end
 
 # ╔═╡ 9120bb6a-d687-431a-aa98-5d3b60fefda7
 md"""
-## Test: $\Omega_b^- \to \Xi_c^+ K^- \pi^-$
+## Validation with $\Omega_b^- \to \Xi_c^+ K^- \pi^-$
 """
 
 # ╔═╡ 7ecd9d76-583c-4d08-9332-3a80307227cc
@@ -153,6 +156,7 @@ via_Ξcˣ= [
 
 # ╔═╡ Cell order:
 # ╟─072ab567-6b5b-4e90-9127-1debf2a9cffa
+# ╠═ee76c86b-0d6c-423d-9a5c-870821bb68c8
 # ╠═9929c400-4607-11ed-0cc7-db923ef1334a
 # ╠═0c1ce318-7106-41fc-94a1-af5cd0e1e738
 # ╠═bfdb72ec-c298-4584-a9fb-abbabe949c3b
