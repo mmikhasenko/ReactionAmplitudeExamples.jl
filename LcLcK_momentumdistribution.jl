@@ -11,7 +11,8 @@ begin
 	Pkg.add([
 		Pkg.PackageSpec(url="https://github.com/mmikhasenko/ThreeBodyDecay.jl"),
 		Pkg.PackageSpec("Plots"),
-		Pkg.PackageSpec("LaTeXStrings")
+		Pkg.PackageSpec("LaTeXStrings"),
+		Pkg.PackageSpec("QuadGK")
 		])
 	# 
 	using ThreeBodyDecay
