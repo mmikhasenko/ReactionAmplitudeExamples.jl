@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.4
+# v0.19.11
 
 using Markdown
 using InteractiveUtils
@@ -60,10 +60,10 @@ function project3(f, σ3, ms)
 end
 
 # ╔═╡ a802e131-2c78-4c3f-9d9f-49aa45f261ac
-plot(map(x->sqrt.(x), border12(ms)), lc=:black, aspectratio=1,
+plot(border12(ms), lc=:black, aspectratio=1,
 	title="the phase space",
-	xlab=L"m(\Lambda_c^+ K^+)\,\,(\mathrm{MeV})",
-	ylab=L"m(\overline{\Lambda}_c^- K^+)\,\,(\mathrm{MeV})")
+	xlab=L"m^2(\Lambda_c^+ K^+)\,\,(\mathrm{MeV})",
+	ylab=L"m^2(\overline{\Lambda}_c^- K^+)\,\,(\mathrm{MeV})")
 
 # ╔═╡ bebec78c-ccd6-4336-9a05-67bb8f2a985c
 md"""
@@ -72,7 +72,7 @@ by the mass of $\Lambda_c^+ \overline{\Lambda}_c^-$ system since it is two objec
 """
 
 # ╔═╡ 9abc515b-d066-478d-8f1b-32bffadab34c
-pKofσ(mΛcΛc²) = sqrt(KallenFact(mB^2, mK^2, mΛcΛc²)) /(2mB)
+pKofσ(mΛcΛc²) = sqrtKallenFact(mB, mK, sqrt(mΛcΛc²)) /(2mB)
 
 # ╔═╡ 28244da0-f195-4e5e-afb4-2f5c42e52f5d
 pKmax = pKofσ.(lims3(ms))[1]
