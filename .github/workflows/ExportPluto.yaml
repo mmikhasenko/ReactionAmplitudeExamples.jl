@@ -23,7 +23,7 @@ jobs:
             - name: Install Julia
               uses: julia-actions/setup-julia@v1
               with:
-                  version: 1.7
+                  version: 1.7.3
 
             - name: Cache Julia artifacts & such
               uses: julia-actions/cache@v1
