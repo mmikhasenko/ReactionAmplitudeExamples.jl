@@ -10,6 +10,9 @@ using Symbolics
 # ╔═╡ 2b190e59-fc1d-4e15-a2fe-844a0ffb2ad2
 using Combinatorics
 
+# ╔═╡ afa05511-8c23-4ce6-85fa-7b086198a943
+using LinearAlgebra
+
 # ╔═╡ f112d147-5365-4f11-bce3-74e2b91dfc2d
 using WignerSymbols
 
@@ -32,6 +35,9 @@ begin
 		Iterators.product(Symbolics.shape(KroneckerDelta)...)]))
 end ;
 
+# ╔═╡ 981d6177-6f79-4a9b-87b4-fac854d9f032
+const g = Diagonal([-1,-1,-1,1])
+
 # ╔═╡ d9ddee24-58dc-4db5-a65d-6b17c40cd8ef
 md"""
 ## Define variables
@@ -44,7 +50,7 @@ md"""
 @variables s m_1 m_2 m_3 m_0 θ
 
 # ╔═╡ dfbc60cf-894e-466e-8acb-9d4206e75453
-@variables k p E j
+@variables k p j
 
 # ╔═╡ 725245d1-ac4a-40c4-a17d-0f01f3137fa6
 md"""
@@ -63,6 +69,9 @@ evaluatep2 = Symbolics.scalarize(
 evaluatep3 = Symbolics.scalarize(
 	p_3 .=> [0, 0, -p, (m_0^2-s-m_3^2) / 2 / sqrt(s)]) ;
 
+# ╔═╡ a27ada9f-a392-49be-a0a7-daa10b51c4b4
+E = (m_0^2+s-m_3^2) / 2 / sqrt(s) ;
+
 # ╔═╡ a592d167-58ed-4cab-85bd-73bf10b6a7f4
 evaluatep0 = Symbolics.scalarize(
 	p_0 .=> [0, 0, -p, E]) ;
@@ -70,22 +79,33 @@ evaluatep0 = Symbolics.scalarize(
 # ╔═╡ 555f9b43-9de9-4ece-95f8-47ca4c978e81
 tosymbols = Dict(evaluatep1..., evaluatep2..., evaluatep3..., evaluatep0...) ;
 
+# ╔═╡ 1d23967b-95d6-4470-b04f-236f025879c4
+md"""
+Check that $p_1+p_2+p_3=p_0$
+"""
+
+# ╔═╡ a16cd38f-2be0-4864-8704-793fa9a668fa
+p_1+p_2+p_3-p_0 |> Symbolics.scalarize .|> x->substitute(x, tosymbols) |> simplify
+
 # ╔═╡ f8a7b92f-caca-4feb-9816-b344a90ef17c
 md"""
 ## Spin-1 vector
 """
 
 # ╔═╡ 497861b9-738a-466c-868c-21b5c6f16d89
-@variables ε_1[1:4,1:3] ;
+@variables ε_1[1:4,1:3];
 
 # ╔═╡ 661db8e3-6014-42be-b320-36abbc6f626a
 evaluateε1 = let
-	hm1 = [+1,j,0,0] #./ sqrt(2)
-	hz = [0,0,E,-p]
-	hp1 = [-1,j,0,0] #./ sqrt(2)
+	hm1 = [+1,j,0,0] ./ Symbolics.Term(sqrt,[2])
+	hz = [0,0,E,-p] ./ m_0
+	hp1 = [-1,j,0,0] ./ Symbolics.Term(sqrt,[2])
 	
 	Dict(Symbolics.scalarize(ε_1 .=> [hm1 hz hp1]))
 end ;
+
+# ╔═╡ 1685198d-4961-4561-aa87-3b8316c89075
+ε_1 |> Symbolics.scalarize .|> x->substitute(x, evaluateε1)
 
 # ╔═╡ 1a76919a-9d19-488e-889f-e9a5c07630a1
 md"""
@@ -103,8 +123,8 @@ A = A_wrap |> Symbolics.scalarize .|> x->substitute(x, evaluateϵ) ;
 
 # ╔═╡ de32d0d3-5617-4c43-a96f-5cbd0298abb6
 A  .|>
-	x->substitute(x, evaluateε1) .|>
 	x->substitute(x, tosymbols) .|>
+	x->substitute(x, evaluateε1) .|>
 	simplify
 
 # ╔═╡ 1bfcd6f1-74e2-436c-b467-e836ed22da0d
@@ -117,7 +137,7 @@ md"""
 
 # ╔═╡ 2eb39b39-9902-487a-9726-98066d42bafa
 evaluateCG = Dict(Symbolics.scalarize(CG .=> [
-	0+clebschgordan(1,λ1-2,1,λ2-2,2,λ-3) for (λ1,λ2,λ) in
+	clebschgordan(1,λ1-2,1,λ2-2,2,λ-3) for (λ1,λ2,λ) in
 		Iterators.product(Symbolics.shape(CG)...)])) ;
 
 # ╔═╡ 4d21e3ff-6fcb-4f21-82e4-5ee162bbf363
@@ -127,13 +147,13 @@ evaluateCG = Dict(Symbolics.scalarize(CG .=> [
 ε2_val = ε2[:,:,1] |> Symbolics.scalarize .|>
 	x->substitute(x, evaluateCG) .|> 
 	x->substitute(x, evaluateε1) .|> 
-	x->substitute(x, j^2 => -1)
+	x->substitute(x, j^2 => -1) ;
 
 # ╔═╡ c52957e2-45fe-492d-b086-a1f5b422344e
-A2 = Symbolics.@arrayop (λ,) ε2[μ,ν,λ]*p_1[ν]*p_3[ν]
+A2 = Symbolics.@arrayop (λ,) ε2[μ,ν,λ]*K[μ]*g[ν,ν′]*p_3[ν′]
 
 # ╔═╡ ba40ce15-4153-4976-a4b8-0106436888f3
-A2[4] |> Symbolics.scalarize .|> 
+A2_λ1 = A2[4] |> Symbolics.scalarize .|> 
 	x->substitute(x, j^2 => -1) .|> 
 	x->substitute(x, evaluateϵ) .|> 
 	x->substitute(x, evaluateε1) .|> 
@@ -141,10 +161,35 @@ A2[4] |> Symbolics.scalarize .|>
 	x->substitute(x, tosymbols) .|> 
 	simplify
 
+# ╔═╡ 95da1b0f-0633-4f81-8425-375a6d7bb7b8
+ r = @rule sqrt(~x)^2 => ~x
+
+# ╔═╡ 1593b931-831b-4eb6-aebf-09e8b1ae90c8
+simplify(A2_λ1, RuleSet([r])) / (j*p^2*k*sin(θ)) |> simplify
+
+# ╔═╡ 0622242c-1646-424a-b6fd-e981cab77ad0
+md"""
+### Cross channel
+"""
+
+# ╔═╡ 6e9f5dbd-fb4e-4930-9d9b-5eedbc70b997
+A2′ = Symbolics.@arrayop (λ,) ε2[μ,ν,λ]*K[μ]*g[ν,ν′]*p_1[ν′]
+
+# ╔═╡ 9b1a2f13-0751-4c5c-af1f-8d0acc64c525
+A2′_λ1 = A2′[4] |> Symbolics.scalarize .|> 
+	x->substitute(x, j^2 => -1) .|> 
+	x->substitute(x, evaluateϵ) .|> 
+	x->substitute(x, evaluateε1) .|> 
+	x->substitute(x, evaluateCG) .|> 
+	x->substitute(x, tosymbols) .|> 
+	simplify .|>
+	x->simplify(m_0*x / (j*p*k*sin(θ)), RuleSet([r]))
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 WignerSymbols = "9f57e263-0b3d-5e2e-b1be-24f2bb48858b"
 
@@ -160,7 +205,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.1"
 manifest_format = "2.0"
-project_hash = "78bf4406aeb434f5d3551104d72198d1f8d72bb5"
+project_hash = "1ea15ae861456d968201d2b3d0b48dc52c79073e"
 
 [[deps.AbstractAlgebra]]
 deps = ["GroupsCore", "InteractiveUtils", "LinearAlgebra", "MacroTools", "Markdown", "Random", "RandomExtensions", "SparseArrays", "Test"]
@@ -971,8 +1016,10 @@ version = "17.4.0+0"
 # ╟─9268d453-b7f2-43f6-9af3-0ff54b658598
 # ╠═70065006-585e-4d3d-982f-11eb4746f51a
 # ╠═2b190e59-fc1d-4e15-a2fe-844a0ffb2ad2
+# ╠═afa05511-8c23-4ce6-85fa-7b086198a943
 # ╠═19e2509a-f7a1-49b4-b79f-aae345e29c8e
 # ╠═b6fbaf6d-1bda-4bc0-b963-f6072de4e401
+# ╠═981d6177-6f79-4a9b-87b4-fac854d9f032
 # ╟─d9ddee24-58dc-4db5-a65d-6b17c40cd8ef
 # ╠═a8479a8f-5268-43be-8d0f-6f29a83fbc59
 # ╠═d297b700-bdc5-43dd-b5f6-d685b45ba6cc
@@ -981,11 +1028,15 @@ version = "17.4.0+0"
 # ╠═00af5e32-761f-4bcf-82f8-9b584958955d
 # ╠═7e2aa8a0-a19a-42fb-8c59-e7520515cd02
 # ╠═61f44078-8b6a-4307-bfb5-bd498c7d028b
+# ╠═a27ada9f-a392-49be-a0a7-daa10b51c4b4
 # ╠═a592d167-58ed-4cab-85bd-73bf10b6a7f4
 # ╠═555f9b43-9de9-4ece-95f8-47ca4c978e81
+# ╟─1d23967b-95d6-4470-b04f-236f025879c4
+# ╠═a16cd38f-2be0-4864-8704-793fa9a668fa
 # ╟─f8a7b92f-caca-4feb-9816-b344a90ef17c
 # ╠═497861b9-738a-466c-868c-21b5c6f16d89
 # ╠═661db8e3-6014-42be-b320-36abbc6f626a
+# ╠═1685198d-4961-4561-aa87-3b8316c89075
 # ╟─1a76919a-9d19-488e-889f-e9a5c07630a1
 # ╠═bb237c06-6918-4e25-8f4c-154ced42e02b
 # ╠═9943d7bd-4d50-4e51-a6e4-cb913db6500f
@@ -999,5 +1050,10 @@ version = "17.4.0+0"
 # ╠═1ea0ab96-2361-40d3-97b2-73c7984b4dad
 # ╠═c52957e2-45fe-492d-b086-a1f5b422344e
 # ╠═ba40ce15-4153-4976-a4b8-0106436888f3
+# ╠═95da1b0f-0633-4f81-8425-375a6d7bb7b8
+# ╠═1593b931-831b-4eb6-aebf-09e8b1ae90c8
+# ╟─0622242c-1646-424a-b6fd-e981cab77ad0
+# ╠═6e9f5dbd-fb4e-4930-9d9b-5eedbc70b997
+# ╠═9b1a2f13-0751-4c5c-af1f-8d0acc64c525
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
