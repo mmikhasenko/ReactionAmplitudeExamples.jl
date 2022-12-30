@@ -46,14 +46,37 @@ md"""
 ## Define variables
 """
 
+# ╔═╡ c3a5cc00-c4a9-493e-818a-6be87ab5742c
+md"""
+tensors
+"""
+
 # ╔═╡ a8479a8f-5268-43be-8d0f-6f29a83fbc59
 @variables ε[1:4, 1:4] p_1[1:4]  p_2[1:4] p_3[1:4] p_0[1:4] 
+
+# ╔═╡ dbd16483-3d34-422f-aba0-f358ceda4a12
+md"""
+constants: masses, Mandelstam variable $s$, scattering angle $\theta$
+"""
 
 # ╔═╡ d297b700-bdc5-43dd-b5f6-d685b45ba6cc
 @variables s m_1 m_2 m_3 m_0 θ
 
+# ╔═╡ 7dcbcbea-11bd-4a5e-b837-2170439f11ea
+md"""
+three-momenta $k$, and $p$
+"""
+
 # ╔═╡ dfbc60cf-894e-466e-8acb-9d4206e75453
-@variables k p j
+@variables k p
+
+# ╔═╡ d1e895d8-708d-4d47-993c-96dc2d3a939f
+md"""
+imaginary part $j$
+"""
+
+# ╔═╡ c23e5c9b-ab97-4be6-86bb-c75af5010370
+@variables j
 
 # ╔═╡ 725245d1-ac4a-40c4-a17d-0f01f3137fa6
 md"""
@@ -115,8 +138,20 @@ md"""
 The conjugation won't work since `j` is thoough to be real. Hense, the result is incorrect
 """
 
-# ╔═╡ 6b5300a2-3be0-4aa3-8686-7defe5333001
-r2 = @rule (~x/~y)^2 => (~x)^2 / (~y)^2
+# ╔═╡ 95da1b0f-0633-4f81-8425-375a6d7bb7b8
+extrarules = let
+	r1 = @rule sqrt(~x)^2 => ~x
+	r2 = @rule ((~x)/(~y))^2 => (~x)^2 / (~y)^2
+	RuleSet([r1,r2])
+end ;
+
+# ╔═╡ b185ba09-4108-4db2-8866-7f5b57e030ff
+Nε |> Symbolics.scalarize  .|>
+	x->substitute(x, evaluateg) .|> 
+	x->substitute(x, evaluateε1) .|> 
+	Base.Fix2(simplify, extrarules) .|> 
+	x->substitute(x, j^2 => -1) .|> 
+	simplify_fractions
 
 # ╔═╡ 1a76919a-9d19-488e-889f-e9a5c07630a1
 md"""
@@ -161,8 +196,7 @@ formulate_equations(evaluatep3)
 formulate_equations(evaluatep0)
 
 # ╔═╡ 1685198d-4961-4561-aa87-3b8316c89075
-[
-	"$(ε_1.value.name)(" .* string.([-1 0 1]) .*")" =>
+["$(ε_1.value.name)(" .* string.([-1 0 1]) .*")" =>
 		(ε_1 |> Symbolics.scalarize .|>
 	x->substitute(x, evaluateε1))
 ] |> formulate_equations
@@ -176,12 +210,12 @@ formulate_equations(evaluatep0)
 # ╔═╡ d943f094-ed03-440f-a1fa-ba606a5bba62
 A_sc = A |> Symbolics.scalarize .|>
 	x->substitute(x, evaluateϵ) .|>
-	x->substitute(x, tosymbols) .|>
 	x->substitute(x, evaluateε1) .|>
+	x->substitute(x, tosymbols; fold=false) .|>
 	simplify;
 
 # ╔═╡ de32d0d3-5617-4c43-a96f-5cbd0298abb6
-["A(" .* string.(-1:1) .*")" => A_sc] |> formulate_equations
+("A[" .* string.(-1:1) .*"]" .=> A_sc) |> formulate_equations
 
 # ╔═╡ 1bfcd6f1-74e2-436c-b467-e836ed22da0d
 md"""
@@ -189,13 +223,20 @@ md"""
 """
 
 # ╔═╡ cb30d7bb-4989-4874-87c2-5981dbe3954a
-@variables CG[1:3,1:3,1:5] ;
+@variables CG[1:3,1:3,1:5];
+
+# ╔═╡ 86e53a4e-1956-41d5-81b7-e7b40cdebe1a
+function convert2term(x::WignerSymbols.RationalRoots.RationalRoot)
+	x == 0 && return Num(0)
+	Symbolics.Term(sqrt, abs(x.signedsquare)) * sign(x)
+end ;
 
 # ╔═╡ 2eb39b39-9902-487a-9726-98066d42bafa
-evaluateCG = Dict(Symbolics.scalarize(CG .=> [
-			clebschgordan(1,λ1-2,1,λ2-2,2,λ-3) for (λ1,λ2,λ) in
+evaluateCG = Dict(
+		Symbolics.scalarize(CG) .=> 
+			[(clebschgordan(1,λ1-2,1,λ2-2,2,λ-3) |> convert2term) for (λ1,λ2,λ) in
 		Iterators.product(Symbolics.shape(CG)...)]
-)) ;
+) ;
 
 # ╔═╡ 4d21e3ff-6fcb-4f21-82e4-5ee162bbf363
 ε_2 = Symbolics.@arrayop (μ,ν,λ) ε_1[μ,λ_1] * ε_1[ν,λ_2] * CG[λ_1,λ_2,λ] term=:ε_2;
@@ -210,23 +251,28 @@ evaluateCG = Dict(Symbolics.scalarize(CG .=> [
 	x->substitute(x, j^2 => -1) ;
 
 # ╔═╡ c52957e2-45fe-492d-b086-a1f5b422344e
-A_2 = Symbolics.@arrayop (λ,) ε_2[μ,ν,λ]*K[μ]*g[ν,ν′]*p_3[ν′] term=:A_2;
+A_2 = Symbolics.@arrayop (λ,) ε_2[μ,ν,λ]*K[μ]*g[ν,ν′]*p_3[ν′];
 
 # ╔═╡ d087fcd9-15d3-4e33-9480-f88c2b0aa8c7
-["$(A_2.term)[$(A_2.output_idx[1])]" => A_2.expr] |> formulate_equations
+["A_2[$(A_2.output_idx[1])]" => A_2.expr] |> formulate_equations
+
+# ╔═╡ bbacb260-37a7-4314-be0b-dbaa64905cb7
+# shame on me for manual simplification
+sqrtunit = Symbolics.Term(sqrt,1//2) * Symbolics.Term(sqrt,2) ;
 
 # ╔═╡ ba40ce15-4153-4976-a4b8-0106436888f3
-A_2_λ1 = A_2[4] |> Symbolics.scalarize .|> 
+A_2_sc = A_2 |> Symbolics.scalarize .|> 
 	x->substitute(x, j^2 => -1) .|> 
 	x->substitute(x, evaluateϵ) .|> 
 	x->substitute(x, evaluateg) .|> 
-	x->substitute(x, evaluateCG) .|> 
 	x->substitute(x, evaluateε1) .|> 
-	x->substitute(x, tosymbols) .|> 
-	simplify;
+	x->substitute(x, evaluateCG; fold=false) .|> 
+	x->substitute(x, tosymbols; fold=false) .|> 
+	simplify .|>
+	x->simplify(x / sqrtunit, extrarules);
 
 # ╔═╡ 7d91316b-3197-4fba-bd4e-3104d5f191cf
-["A_2[1]" => A_2_λ1] |> formulate_equations
+("A_2[".*string.(-2:2).*"]" .=> A_2_sc) |> formulate_equations
 
 # ╔═╡ 0622242c-1646-424a-b6fd-e981cab77ad0
 md"""
@@ -234,18 +280,7 @@ md"""
 """
 
 # ╔═╡ 6e9f5dbd-fb4e-4930-9d9b-5eedbc70b997
-A_2′ = Symbolics.@arrayop (λ,) ε_2[μ,ν,λ]*K[μ]*g[ν,ν′]*p_1[ν′] term=:A_2′ ;
-
-# ╔═╡ 95da1b0f-0633-4f81-8425-375a6d7bb7b8
- r = @rule sqrt(~x)^2 => ~x
-
-# ╔═╡ b185ba09-4108-4db2-8866-7f5b57e030ff
-Nε |> Symbolics.scalarize  .|>
-	x->substitute(x, evaluateg) .|> 
-	x->substitute(x, evaluateε1) .|> 
-	Base.Fix2(simplify, RuleSet([r,r2])) .|> 
-	x->substitute(x, j^2 => -1) .|> 
-	simplify_fractions
+A_2′ = Symbolics.@arrayop (λ,) ε_2[μ,ν,λ]*K[μ]*g[ν,ν′]*p_1[ν′] ;
 
 # ╔═╡ 9b1a2f13-0751-4c5c-af1f-8d0acc64c525
 A_2′_λ1 = A_2′[4] |> Symbolics.scalarize .|> 
@@ -253,10 +288,10 @@ A_2′_λ1 = A_2′[4] |> Symbolics.scalarize .|>
 	x->substitute(x, evaluateϵ) .|> 
 	x->substitute(x, evaluateg) .|> 
 	x->substitute(x, evaluateε1) .|> 
-	x->substitute(x, evaluateCG) .|> 
-	x->substitute(x, tosymbols) .|> 
+	x->substitute(x, evaluateCG; fold=false) .|> 
+	x->substitute(x, tosymbols; fold=false) .|> 
 	simplify .|>
-	x->simplify(m_0*x / (j*p*k*sin(θ)), RuleSet([r])) ;
+	x->simplify(x / sqrtunit, extrarules) ;
 
 # ╔═╡ 77fcee8a-7038-419e-95e4-c792af03f86f
 ["A_2′[1]" => A_2′_λ1] |> formulate_equations
@@ -1098,9 +1133,14 @@ version = "17.4.0+0"
 # ╠═452705ca-833e-4a22-841e-1a272cb5e23d
 # ╠═3db65143-6d6a-4b60-ac49-eb76a16dd59a
 # ╟─d9ddee24-58dc-4db5-a65d-6b17c40cd8ef
+# ╟─c3a5cc00-c4a9-493e-818a-6be87ab5742c
 # ╠═a8479a8f-5268-43be-8d0f-6f29a83fbc59
+# ╟─dbd16483-3d34-422f-aba0-f358ceda4a12
 # ╠═d297b700-bdc5-43dd-b5f6-d685b45ba6cc
+# ╟─7dcbcbea-11bd-4a5e-b837-2170439f11ea
 # ╠═dfbc60cf-894e-466e-8acb-9d4206e75453
+# ╟─d1e895d8-708d-4d47-993c-96dc2d3a939f
+# ╠═c23e5c9b-ab97-4be6-86bb-c75af5010370
 # ╟─725245d1-ac4a-40c4-a17d-0f01f3137fa6
 # ╠═00af5e32-761f-4bcf-82f8-9b584958955d
 # ╠═2a8152f9-da8b-466f-8a58-3cea831ec759
@@ -1121,29 +1161,30 @@ version = "17.4.0+0"
 # ╠═136e9636-80d1-4735-a34e-ab4e8273b34a
 # ╟─f53a9d88-bbaf-4314-a3fd-fcc2bce41e11
 # ╠═b185ba09-4108-4db2-8866-7f5b57e030ff
-# ╠═6b5300a2-3be0-4aa3-8686-7defe5333001
+# ╠═95da1b0f-0633-4f81-8425-375a6d7bb7b8
 # ╟─1a76919a-9d19-488e-889f-e9a5c07630a1
 # ╠═bb237c06-6918-4e25-8f4c-154ced42e02b
 # ╠═037426e9-a38a-4956-86c5-90d1b4a004c8
 # ╠═9943d7bd-4d50-4e51-a6e4-cb913db6500f
 # ╠═089e2368-606e-40d2-96bd-6cd4a6705f9f
 # ╠═d943f094-ed03-440f-a1fa-ba606a5bba62
-# ╟─de32d0d3-5617-4c43-a96f-5cbd0298abb6
+# ╠═de32d0d3-5617-4c43-a96f-5cbd0298abb6
 # ╟─1bfcd6f1-74e2-436c-b467-e836ed22da0d
 # ╠═f112d147-5365-4f11-bce3-74e2b91dfc2d
 # ╠═cb30d7bb-4989-4874-87c2-5981dbe3954a
+# ╠═86e53a4e-1956-41d5-81b7-e7b40cdebe1a
 # ╠═2eb39b39-9902-487a-9726-98066d42bafa
 # ╠═4d21e3ff-6fcb-4f21-82e4-5ee162bbf363
 # ╠═0344bcfe-f0ff-45da-b339-2cc0b30a0339
 # ╠═1ea0ab96-2361-40d3-97b2-73c7984b4dad
 # ╠═c52957e2-45fe-492d-b086-a1f5b422344e
 # ╠═d087fcd9-15d3-4e33-9480-f88c2b0aa8c7
+# ╠═bbacb260-37a7-4314-be0b-dbaa64905cb7
 # ╠═ba40ce15-4153-4976-a4b8-0106436888f3
 # ╠═7d91316b-3197-4fba-bd4e-3104d5f191cf
 # ╟─0622242c-1646-424a-b6fd-e981cab77ad0
 # ╠═6e9f5dbd-fb4e-4930-9d9b-5eedbc70b997
 # ╠═9b1a2f13-0751-4c5c-af1f-8d0acc64c525
-# ╠═95da1b0f-0633-4f81-8425-375a6d7bb7b8
 # ╠═77fcee8a-7038-419e-95e4-c792af03f86f
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
