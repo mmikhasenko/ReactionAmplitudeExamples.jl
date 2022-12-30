@@ -108,7 +108,7 @@ evaluateε1 = let
 end ;
 
 # ╔═╡ 136e9636-80d1-4735-a34e-ab4e8273b34a
-Nε = Symbolics.@arrayop (λ,) ε_1[μ,λ]*conj(ε_1[ν,λ])*g[μ,ν] ;
+Nε = Symbolics.@arrayop (λ,) ε_1[μ,λ]*ε_1[ν,λ]*g[μ,ν] ;
 
 # ╔═╡ f53a9d88-bbaf-4314-a3fd-fcc2bce41e11
 md"""
@@ -127,7 +127,7 @@ md"""
 K = (Symbolics.@arrayop (α,) ϵ[α,β,μ,ν]*p_1[β]*p_2[μ]*p_3[ν] term=:K);
 
 # ╔═╡ 9943d7bd-4d50-4e51-a6e4-cb913db6500f
-A = Symbolics.@arrayop (λ,) ε_1[μ,λ]*K[μ] ;
+A = (Symbolics.@arrayop (λ,) ε_1[μ,λ]*K[μ]) ;
 
 # ╔═╡ 3db65143-6d6a-4b60-ac49-eb76a16dd59a
 function formulate_equations(d::Union{Dict, Vector{Pair{A,B}} where {A,B}})
@@ -162,12 +162,13 @@ formulate_equations(evaluatep0)
 
 # ╔═╡ 1685198d-4961-4561-aa87-3b8316c89075
 [
-	"ε_1(" .* string.([-1 0 1]) .*")" => (ε_1 |> Symbolics.scalarize .|>
+	"$(ε_1.value.name)(" .* string.([-1 0 1]) .*")" =>
+		(ε_1 |> Symbolics.scalarize .|>
 	x->substitute(x, evaluateε1))
 ] |> formulate_equations
 
 # ╔═╡ 037426e9-a38a-4956-86c5-90d1b4a004c8
-[("K[$(K.output_idx[1])]") => K.expr] |> formulate_equations
+[("$(K.term)[$(K.output_idx[1])]") => K.expr] |> formulate_equations
 
 # ╔═╡ 089e2368-606e-40d2-96bd-6cd4a6705f9f
 [("A[$(A.output_idx[1])]") => A.expr] |> formulate_equations
@@ -225,17 +226,7 @@ A_2_λ1 = A_2[4] |> Symbolics.scalarize .|>
 	simplify;
 
 # ╔═╡ 7d91316b-3197-4fba-bd4e-3104d5f191cf
-["A_2(1)" => A_2_λ1] |> formulate_equations
-
-# ╔═╡ 95da1b0f-0633-4f81-8425-375a6d7bb7b8
- r = @rule sqrt(~x)^2 => ~x
-
-# ╔═╡ b185ba09-4108-4db2-8866-7f5b57e030ff
-Nε |> Symbolics.scalarize  .|>
-	x->substitute(x, evaluateε1) .|> 
-	Base.Fix2(simplify, RuleSet([r,r2])) .|> 
-	x->substitute(x, j^2 => -1) .|> 
-	simplify_fractions
+["A_2[1]" => A_2_λ1] |> formulate_equations
 
 # ╔═╡ 0622242c-1646-424a-b6fd-e981cab77ad0
 md"""
@@ -244,6 +235,17 @@ md"""
 
 # ╔═╡ 6e9f5dbd-fb4e-4930-9d9b-5eedbc70b997
 A_2′ = Symbolics.@arrayop (λ,) ε_2[μ,ν,λ]*K[μ]*g[ν,ν′]*p_1[ν′] term=:A_2′ ;
+
+# ╔═╡ 95da1b0f-0633-4f81-8425-375a6d7bb7b8
+ r = @rule sqrt(~x)^2 => ~x
+
+# ╔═╡ b185ba09-4108-4db2-8866-7f5b57e030ff
+Nε |> Symbolics.scalarize  .|>
+	x->substitute(x, evaluateg) .|> 
+	x->substitute(x, evaluateε1) .|> 
+	Base.Fix2(simplify, RuleSet([r,r2])) .|> 
+	x->substitute(x, j^2 => -1) .|> 
+	simplify_fractions
 
 # ╔═╡ 9b1a2f13-0751-4c5c-af1f-8d0acc64c525
 A_2′_λ1 = A_2′[4] |> Symbolics.scalarize .|> 
@@ -257,7 +259,7 @@ A_2′_λ1 = A_2′[4] |> Symbolics.scalarize .|>
 	x->simplify(m_0*x / (j*p*k*sin(θ)), RuleSet([r])) ;
 
 # ╔═╡ 77fcee8a-7038-419e-95e4-c792af03f86f
-["A_2′(1)" => A_2′_λ1] |> formulate_equations
+["A_2′[1]" => A_2′_λ1] |> formulate_equations
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
