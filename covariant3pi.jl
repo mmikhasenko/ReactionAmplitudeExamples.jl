@@ -80,14 +80,14 @@ evaluatep3 = Symbolics.scalarize(
 
 # ╔═╡ 61f44078-8b6a-4307-bfb5-bd498c7d028b
 evaluatep1 = Symbolics.scalarize(
-	p_1 .=> [0, 0, -p, (m_0^2-s-m_1^2) / 2 / sqrt(s)]) ;
+	p_1 .=> [0, 0, p, (m_0^2-s-m_1^2) / 2 / sqrt(s)]) ;
 
 # ╔═╡ a27ada9f-a392-49be-a0a7-daa10b51c4b4
 E = (m_0^2+s-m_1^2) / 2 / sqrt(s) ;
 
 # ╔═╡ a592d167-58ed-4cab-85bd-73bf10b6a7f4
 evaluatep0 = Symbolics.scalarize(
-	p_0 .=> [0, 0, -p, E]) ;
+	p_0 .=> [0, 0, p, E]) ;
 
 # ╔═╡ 555f9b43-9de9-4ece-95f8-47ca4c978e81
 tosymbols = Dict(evaluatep1..., evaluatep2..., evaluatep3..., evaluatep0...) ;
@@ -99,6 +99,23 @@ Check that $p_1+p_2+p_3=p_0$
 
 # ╔═╡ a16cd38f-2be0-4864-8704-793fa9a668fa
 p_1+p_2+p_3-p_0 |> Symbolics.scalarize .|> x->substitute(x, tosymbols) |> simplify
+
+# ╔═╡ a3d5b180-40b3-4696-b0eb-6543a7dfbe55
+md"""
+Check of the angle definition:
+
+$\cos\theta = s(t-u) / \sqrt{\lambda_T \lambda}$
+
+Note, that for [DPD conventions](https://arxiv.org/pdf/1910.04566.pdf), it is different: $\cos\theta_{23} = s(u-t) / \sqrt{\lambda_T \lambda}$
+"""
+
+# ╔═╡ d6bcaa54-bc4d-437b-995e-580461991ade
+begin
+	t = Symbolics.@arrayop () (p_3[μ]+p_1[μ])*g[μ,ν]*(p_3[ν]+p_1[ν])
+	t |> Symbolics.scalarize |> 
+		x->substitute(x[1,1], evaluateg) |> 
+		x->substitute(x, tosymbols) |> simplify
+end
 
 # ╔═╡ f8a7b92f-caca-4feb-9816-b344a90ef17c
 md"""
@@ -116,7 +133,7 @@ $\epsilon^\nu(\lambda)$
 # ╔═╡ 661db8e3-6014-42be-b320-36abbc6f626a
 evaluateε1 = let
 	hm1 = [+1,j,0,0] ./ Symbolics.Term(sqrt,2)
-	hz = [0,0,E,-p] ./ m_0
+	hz = [0,0,E,p] ./ m_0
 	hp1 = [-1,j,0,0] ./ Symbolics.Term(sqrt,2)
 	
 	Dict(Symbolics.scalarize(ε_1 .=> [hm1 hz hp1]))
@@ -302,7 +319,7 @@ md"""
 """
 
 # ╔═╡ 6e9f5dbd-fb4e-4930-9d9b-5eedbc70b997
-A_2′ = Symbolics.@arrayop (λ,) ε_2[μ,ν,λ]*K[μ]*g[ν,ν′]*(p_1[ν′]+p_2[ν′]);
+A_2′ = Symbolics.@arrayop (λ,) ε_2[μ,ν,λ]*K[μ]*g[ν,ν′]*(p_2[ν′]-p_3[ν′]);
 
 # ╔═╡ b871d212-8c1a-4caa-9411-fa35624f47b2
 ["A_2′[$(A_2′.output_idx[1])]" => A_2′.expr] |> formulate_equations
@@ -319,7 +336,7 @@ A_2′_sc = A_2′ |> Symbolics.scalarize .|>
 	x->simplify(x, extrarules) ;
 
 # ╔═╡ 77fcee8a-7038-419e-95e4-c792af03f86f
-# ("A_2′[".*string.(-2:2).*"]" .=> A_2′_sc) |> formulate_equations
+("A_2′[".*string.(-2:2).*"]" .=> A_2′_sc) |> formulate_equations
 
 # ╔═╡ 5b2b8f46-d1ad-4570-a05a-7cb44d9a8dff
 md"""
@@ -340,19 +357,21 @@ b) helicity-1 amplitude
 function specificshape1(amplitude)
 	expr = simplify(amplitude / sqrtunit, extrarules)
 	# 
-	factor = j*p*k / (4m_0)
+	factor = j*p*k / (2m_0)
 	unfac = (expr / factor ) |> simplify
 	
-	expr1 = k*sin(2θ)/2
+	expr1 = k*sin(2θ)
 	expr2 = p*sin(θ)
 	# 
 	xslit = sum(unfac.val.dict) do (k,v)
 		hassin2θ(x::Symbolics.Mul) = sin(2θ) in keys(x.dict)
-		k * v .* (hassin2θ(k) ? [1/expr1, 0] : [0,1/expr2])
+		hassinθ(x::Symbolics.Mul) = sin(θ) in keys(x.dict)
+		k * v .* (hassin2θ(k) ?
+				[1/expr1, 0] : (
+					hassinθ(k) ? [0,1/expr2] : error("unexpected")))
 	end .* [expr1, expr2] |> sum
 	# 
 	return xslit * factor
-	
 end
 
 # ╔═╡ 9a78dbba-5e73-4c74-9ec0-395c32d734d9
@@ -365,7 +384,7 @@ end
 md"""
 Type in latex:
 ```math
-\frac{i p^2 k s}{4m_0} \left[ - \frac{s+m_3^2-m_2^2}{s}\sin\theta + \frac{s+m_0^2-m_1^2}{s} \frac{k}{p}\sin\theta \cos\theta \right]
+\frac{i p^2 k}{2m_0} \left[(m_2^2-m_3^2)\sin\theta - s\frac{s+m_0^2-m_1^2}{s} \frac{k}{p}\sin\theta \cos\theta \right]
 ```
 """
 
@@ -385,7 +404,7 @@ end
 md"""
 Type in latex:
 ```math
--\frac{i p k^2 \sqrt{s}}{2} \sin^2\theta
+i p k^2 \sqrt{s} \sin^2\theta
 ```
 """
 
@@ -1244,6 +1263,8 @@ version = "17.4.0+0"
 # ╠═555f9b43-9de9-4ece-95f8-47ca4c978e81
 # ╟─1d23967b-95d6-4470-b04f-236f025879c4
 # ╠═a16cd38f-2be0-4864-8704-793fa9a668fa
+# ╟─a3d5b180-40b3-4696-b0eb-6543a7dfbe55
+# ╠═d6bcaa54-bc4d-437b-995e-580461991ade
 # ╟─f8a7b92f-caca-4feb-9816-b344a90ef17c
 # ╠═497861b9-738a-466c-868c-21b5c6f16d89
 # ╠═661db8e3-6014-42be-b320-36abbc6f626a
@@ -1284,6 +1305,6 @@ version = "17.4.0+0"
 # ╟─b06aeb16-7a65-46c0-88d2-351dc0393c19
 # ╟─442b7ecb-7795-4f09-b961-20213ce66a65
 # ╠═f54fb79c-faf0-4ff6-9765-6320e407b6dc
-# ╟─7797b445-a17e-4e2c-8415-6bd42a0e69cb
+# ╠═7797b445-a17e-4e2c-8415-6bd42a0e69cb
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
