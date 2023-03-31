@@ -13,7 +13,7 @@ md"""
 
 We work out covariant amplitudes for $X^i \to \pi^j \pi^k \pi^k$ decays for arbitrary isospin using the cartesian basis. The amplitude is related to the charge basis by linear transformation.
 
-We focus on the $J^{PC} = 2^++$ sector.
+We focus on the $J^{PC} = 2^{++}$ sector.
 """
 
 # ╔═╡ 21ec2e15-a984-4816-bbb1-08efbb1016ee
@@ -443,7 +443,7 @@ version = "17.4.0+0"
 """
 
 # ╔═╡ Cell order:
-# ╠═afc4e979-e5f0-495b-a10e-c1bca0845dc7
+# ╟─afc4e979-e5f0-495b-a10e-c1bca0845dc7
 # ╠═f1634740-cfe1-11ed-3804-b74bfa23da7a
 # ╠═21ec2e15-a984-4816-bbb1-08efbb1016ee
 # ╠═8d2f9797-2593-45c6-ace0-cda0b1afe808
