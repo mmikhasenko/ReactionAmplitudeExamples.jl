@@ -1,28 +1,32 @@
 ### A Pluto.jl notebook ###
-# v0.19.12
+# v0.19.22
 
 using Markdown
 using InteractiveUtils
 
 # ╔═╡ 70065006-585e-4d3d-982f-11eb4746f51a
-using Symbolics
-
-# ╔═╡ 2b190e59-fc1d-4e15-a2fe-844a0ffb2ad2
-using Combinatorics
-
-# ╔═╡ afa05511-8c23-4ce6-85fa-7b086198a943
-using LinearAlgebra
-
-# ╔═╡ 452705ca-833e-4a22-841e-1a272cb5e23d
-using Symbolics.Latexify
-
-# ╔═╡ f112d147-5365-4f11-bce3-74e2b91dfc2d
-using WignerSymbols
+begin
+	using Symbolics
+	using Combinatorics
+	using LinearAlgebra
+	using WignerSymbols
+	# 
+	using Symbolics.Latexify
+end
 
 # ╔═╡ 9268d453-b7f2-43f6-9af3-0ff54b658598
 md"""
-# Covariant Amplitudes
-In this notebook, I am exploring how to compute the covariant amplitudes with Julia Symbolics
+# Projection of covariant amplitudes
+
+[arXiv 2212.11767](https://arxiv.org/abs/2212.11767)
+
+In this notebook, we will calculate projection kernels related to the quantification of rescattering effects in three-pion systems. We focus on two decay processes with total $J^{PC} = 1^{-+}$, and $2^{++}$, which decay predominantly as $\rho\pi$ states.
+
+By solving the Khuri--Treiman integral equations, we aim to investigate the significance of rescattering effects beyond two-body resonances and determine the minimum number of events required to unambiguously find these effects in future Dalitz-plot analyses.
+
+This analysis will help us identify kinematic effects that either enhance or dilute the rescattering for the selected set of quantum numbers and various masses.
+
+The notebook is in Julia. I am experimenting with the `Symbolics` package.
 """
 
 # ╔═╡ 19e2509a-f7a1-49b4-b79f-aae345e29c8e
@@ -52,31 +56,14 @@ tensors
 """
 
 # ╔═╡ a8479a8f-5268-43be-8d0f-6f29a83fbc59
-@variables ε[1:4, 1:4] p_1[1:4]  p_2[1:4] p_3[1:4] p_0[1:4] 
-
-# ╔═╡ dbd16483-3d34-422f-aba0-f358ceda4a12
-md"""
-constants: masses, Mandelstam variable $s$, scattering angle $\theta$
-"""
-
-# ╔═╡ d297b700-bdc5-43dd-b5f6-d685b45ba6cc
-@variables s m_1 m_2 m_3 m_0 θ
-
-# ╔═╡ 7dcbcbea-11bd-4a5e-b837-2170439f11ea
-md"""
-three-momenta $k$, and $p$
-"""
-
-# ╔═╡ dfbc60cf-894e-466e-8acb-9d4206e75453
-@variables k p
-
-# ╔═╡ d1e895d8-708d-4d47-993c-96dc2d3a939f
-md"""
-imaginary part $j$
-"""
-
-# ╔═╡ c23e5c9b-ab97-4be6-86bb-c75af5010370
-@variables j
+begin
+	#tensors
+	@variables ε[1:4, 1:4] p_1[1:4]  p_2[1:4] p_3[1:4] p_0[1:4] 
+	# constants: masses, Mandelstam variable $s$, scattering angle $\theta$
+	@variables s m_1 m_2 m_3 m_0 θ
+	@variables k p  # three-momenta $k$, and $p$
+	@variables j  # imaginary part $j$
+end ;
 
 # ╔═╡ 725245d1-ac4a-40c4-a17d-0f01f3137fa6
 md"""
@@ -84,19 +71,19 @@ md"""
 """
 
 # ╔═╡ 00af5e32-761f-4bcf-82f8-9b584958955d
-evaluatep1 = Symbolics.scalarize(
-	p_1 .=> [k*sin(θ), 0, k*cos(θ), (s+m_1^2-m_2^2) / 2 / sqrt(s)]) ;
+evaluatep2 = Symbolics.scalarize(
+	p_2 .=> [k*sin(θ), 0, k*cos(θ), (s+m_2^2-m_3^2) / 2 / sqrt(s)]) ;
 
 # ╔═╡ 7e2aa8a0-a19a-42fb-8c59-e7520515cd02
-evaluatep2 = Symbolics.scalarize(
-	p_2 .=> [-k*sin(θ), 0, -k*cos(θ), (s-m_1^2+m_2^2) / 2 / sqrt(s)]) ;
+evaluatep3 = Symbolics.scalarize(
+	p_3 .=> [-k*sin(θ), 0, -k*cos(θ), (s-m_2^2+m_3^2) / 2 / sqrt(s)]) ;
 
 # ╔═╡ 61f44078-8b6a-4307-bfb5-bd498c7d028b
-evaluatep3 = Symbolics.scalarize(
-	p_3 .=> [0, 0, -p, (m_0^2-s-m_3^2) / 2 / sqrt(s)]) ;
+evaluatep1 = Symbolics.scalarize(
+	p_1 .=> [0, 0, -p, (m_0^2-s-m_1^2) / 2 / sqrt(s)]) ;
 
 # ╔═╡ a27ada9f-a392-49be-a0a7-daa10b51c4b4
-E = (m_0^2+s-m_3^2) / 2 / sqrt(s) ;
+E = (m_0^2+s-m_1^2) / 2 / sqrt(s) ;
 
 # ╔═╡ a592d167-58ed-4cab-85bd-73bf10b6a7f4
 evaluatep0 = Symbolics.scalarize(
@@ -116,6 +103,11 @@ p_1+p_2+p_3-p_0 |> Symbolics.scalarize .|> x->substitute(x, tosymbols) |> simpli
 # ╔═╡ f8a7b92f-caca-4feb-9816-b344a90ef17c
 md"""
 ## Spin-1 vector
+
+The polarization covariant vector depends on helicity, $\lambda \in \{-1,0,1\}$
+
+$\epsilon^\nu(\lambda)$
+
 """
 
 # ╔═╡ 497861b9-738a-466c-868c-21b5c6f16d89
@@ -130,14 +122,6 @@ evaluateε1 = let
 	Dict(Symbolics.scalarize(ε_1 .=> [hm1 hz hp1]))
 end ;
 
-# ╔═╡ 136e9636-80d1-4735-a34e-ab4e8273b34a
-Nε = Symbolics.@arrayop (λ,) ε_1[μ,λ]*ε_1[ν,λ]*g[μ,ν] ;
-
-# ╔═╡ f53a9d88-bbaf-4314-a3fd-fcc2bce41e11
-md"""
-The conjugation won't work since `j` is thoough to be real. Hense, the result is incorrect
-"""
-
 # ╔═╡ 95da1b0f-0633-4f81-8425-375a6d7bb7b8
 extrarules = let
 	r1 = @rule sqrt(~x)^2 => ~x
@@ -145,17 +129,14 @@ extrarules = let
 	RuleSet([r1,r2])
 end ;
 
-# ╔═╡ b185ba09-4108-4db2-8866-7f5b57e030ff
-Nε |> Symbolics.scalarize  .|>
-	x->substitute(x, evaluateg) .|> 
-	x->substitute(x, evaluateε1) .|> 
-	Base.Fix2(simplify, extrarules) .|> 
-	x->substitute(x, j^2 => -1) .|> 
-	simplify_fractions
-
 # ╔═╡ 1a76919a-9d19-488e-889f-e9a5c07630a1
 md"""
 ## Compute the amplitude
+"""
+
+# ╔═╡ 87b38591-46d8-45a1-80c2-1abf4d9a6685
+md"""
+$K_{\nu} = \epsilon_{\alpha\beta\mu\nu} p_1^\beta p_2^\mu  p_3^\nu$
 """
 
 # ╔═╡ bb237c06-6918-4e25-8f4c-154ced42e02b
@@ -184,13 +165,13 @@ function formulate_equations(d::Union{Dict, Vector{Pair{A,B}} where {A,B}})
 end
 
 # ╔═╡ 2a8152f9-da8b-466f-8a58-3cea831ec759
-formulate_equations(evaluatep1)
-
-# ╔═╡ 22927bd3-e88d-4b4d-b5c3-ad4b54b1acb2
 formulate_equations(evaluatep2)
 
-# ╔═╡ a28fe6d3-90c9-4698-ba0b-87b905ec1c3b
+# ╔═╡ 22927bd3-e88d-4b4d-b5c3-ad4b54b1acb2
 formulate_equations(evaluatep3)
+
+# ╔═╡ a28fe6d3-90c9-4698-ba0b-87b905ec1c3b
+formulate_equations(evaluatep1)
 
 # ╔═╡ 381f83a7-25f4-4bc9-8320-1dce81a24b8d
 formulate_equations(evaluatep0)
@@ -220,6 +201,13 @@ A_sc = A |> Symbolics.scalarize .|>
 # ╔═╡ 1bfcd6f1-74e2-436c-b467-e836ed22da0d
 md"""
 ## Spin-2 tensor
+
+The polarization covariant vector depends on helicity, $\lambda \in \{-2,-1,0,1,2\}$.
+
+It is computed using the spin-1 vectors and Clebsch-Gordan coefficients
+
+$\epsilon^{\nu\tau}(\lambda) = \sum_{\lambda_1,\lambda_2} C_{\lambda_1,\lambda_2}^{1,1,2}\epsilon^{\tau}(\lambda_1)\epsilon^{\tau}(\lambda_2)$
+
 """
 
 # ╔═╡ cb30d7bb-4989-4874-87c2-5981dbe3954a
@@ -250,14 +238,48 @@ evaluateCG = Dict(
 	x->substitute(x, evaluateε1) .|> 
 	x->substitute(x, j^2 => -1) ;
 
+# ╔═╡ 68304160-1524-42cd-ac97-f65158f65c2d
+md"""
+## The $J^{PC}=2^{++}$ sector
+
+The matrix element reads
+
+```math
+A = \varepsilon^{\nu\tau}(\lambda)\, K_\nu\,
+\big[
+	B(s,t,u)(p_{2}+p_{3})_\tau + C(s,t,u)(p_{2}-p_{3})_\tau
+\big]
+```
+
+The matrix element in the paper is defined in extra numerical factor, $\mathcal{M} = i\sqrt{2}A$
+
+The expression is evaluated term by term as follows:
+
+```math
+A = B(s,t,u) A_2 + C(s,t,u) A_{2\prime}
+```
+where $A_2$ and $A_{2\prime}$ are given below.
+
+```math
+\begin{align*}
+A_2(\lambda) &=  \varepsilon^{\nu\tau}(\lambda)\, K_\nu\, (p_{2}+p_{3})_\tau\,,\\
+A_{2\prime}(\lambda) &=  \varepsilon^{\nu\tau}(\lambda)\, K_\nu\, (p_{2}-p_{3})_\tau\,.
+\end{align*}
+```
+"""
+
 # ╔═╡ c52957e2-45fe-492d-b086-a1f5b422344e
-A_2 = Symbolics.@arrayop (λ,) ε_2[μ,ν,λ]*K[μ]*g[ν,ν′]*p_3[ν′];
+A_2 = Symbolics.@arrayop (λ,) ε_2[μ,ν,λ]*K[μ]*g[ν,ν′]*(p_2[ν′]+p_3[ν′]);
 
 # ╔═╡ d087fcd9-15d3-4e33-9480-f88c2b0aa8c7
 ["A_2[$(A_2.output_idx[1])]" => A_2.expr] |> formulate_equations
 
+# ╔═╡ 5d4cebc4-a156-461b-aa61-4334abbdec03
+md"""
+Shame on Symbolics.jl, I have to do manual simplification
+"""
+
 # ╔═╡ bbacb260-37a7-4314-be0b-dbaa64905cb7
-# shame on me for manual simplification
 sqrtunit = Symbolics.Term(sqrt,1//2) * Symbolics.Term(sqrt,2) ;
 
 # ╔═╡ ba40ce15-4153-4976-a4b8-0106436888f3
@@ -280,10 +302,13 @@ md"""
 """
 
 # ╔═╡ 6e9f5dbd-fb4e-4930-9d9b-5eedbc70b997
-A_2′ = Symbolics.@arrayop (λ,) ε_2[μ,ν,λ]*K[μ]*g[ν,ν′]*p_1[ν′] ;
+A_2′ = Symbolics.@arrayop (λ,) ε_2[μ,ν,λ]*K[μ]*g[ν,ν′]*(p_1[ν′]+p_2[ν′]);
+
+# ╔═╡ b871d212-8c1a-4caa-9411-fa35624f47b2
+["A_2′[$(A_2′.output_idx[1])]" => A_2′.expr] |> formulate_equations
 
 # ╔═╡ 9b1a2f13-0751-4c5c-af1f-8d0acc64c525
-A_2′_λ1 = A_2′[4] |> Symbolics.scalarize .|> 
+A_2′_sc = A_2′ |> Symbolics.scalarize .|> 
 	x->substitute(x, j^2 => -1) .|> 
 	x->substitute(x, evaluateϵ) .|> 
 	x->substitute(x, evaluateg) .|> 
@@ -291,10 +316,78 @@ A_2′_λ1 = A_2′[4] |> Symbolics.scalarize .|>
 	x->substitute(x, evaluateCG; fold=false) .|> 
 	x->substitute(x, tosymbols; fold=false) .|> 
 	simplify .|>
-	x->simplify(x / sqrtunit, extrarules) ;
+	x->simplify(x, extrarules) ;
 
 # ╔═╡ 77fcee8a-7038-419e-95e4-c792af03f86f
-["A_2′[1]" => A_2′_λ1] |> formulate_equations
+# ("A_2′[".*string.(-2:2).*"]" .=> A_2′_sc) |> formulate_equations
+
+# ╔═╡ 5b2b8f46-d1ad-4570-a05a-7cb44d9a8dff
+md"""
+Shape the equations nicely:
+ 
+a) helicity-0 amplitude
+"""
+
+# ╔═╡ 4e63dcb4-d53d-4bcb-8708-58148bd3e795
+["A_2′[0]" => A_2′_sc[3]] |> formulate_equations
+
+# ╔═╡ e87daf8c-4f3c-4844-bfca-6ca77b804ac6
+md"""
+b) helicity-1 amplitude
+"""
+
+# ╔═╡ 3f572ed0-60d6-4242-8bf4-3f85f53e6bca
+function specificshape1(amplitude)
+	expr = simplify(amplitude / sqrtunit, extrarules)
+	# 
+	factor = j*p*k / (4m_0)
+	unfac = (expr / factor ) |> simplify
+	
+	expr1 = k*sin(2θ)/2
+	expr2 = p*sin(θ)
+	# 
+	xslit = sum(unfac.val.dict) do (k,v)
+		hassin2θ(x::Symbolics.Mul) = sin(2θ) in keys(x.dict)
+		k * v .* (hassin2θ(k) ? [1/expr1, 0] : [0,1/expr2])
+	end .* [expr1, expr2] |> sum
+	# 
+	return xslit * factor
+	
+end
+
+# ╔═╡ 9a78dbba-5e73-4c74-9ec0-395c32d734d9
+begin
+	xs = specificshape1.(A_2′_sc[[2,4]])
+	("A_2′[".*string.([-1,1]).*"]" .=> xs) |> formulate_equations
+end
+
+# ╔═╡ b06aeb16-7a65-46c0-88d2-351dc0393c19
+md"""
+Type in latex:
+```math
+\frac{i p^2 k s}{4m_0} \left[ - \frac{s+m_3^2-m_2^2}{s}\sin\theta + \frac{s+m_0^2-m_1^2}{s} \frac{k}{p}\sin\theta \cos\theta \right]
+```
+"""
+
+# ╔═╡ 442b7ecb-7795-4f09-b961-20213ce66a65
+md"""
+c) helicity-2 amplitude
+"""
+
+# ╔═╡ f54fb79c-faf0-4ff6-9765-6320e407b6dc
+let
+	xs = A_2′_sc[[1,5]]
+	xs .*= sqrt(s)*sqrt(s)/s / Symbolics.Term(sqrt, 1//1)
+	("A_2′[".*string.([-2,2]).*"]" .=> xs) |> formulate_equations
+end
+
+# ╔═╡ 7797b445-a17e-4e2c-8415-6bd42a0e69cb
+md"""
+Type in latex:
+```math
+-\frac{i p k^2 \sqrt{s}}{2} \sin^2\theta
+```
+"""
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -314,7 +407,7 @@ WignerSymbols = "~2.0.0"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.8.1"
+julia_version = "1.9.0-rc1"
 manifest_format = "2.0"
 project_hash = "3975ded72b4a77797790ec147b6f1d88f55d7825"
 
@@ -438,7 +531,7 @@ version = "4.5.0"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "0.5.2+0"
+version = "1.0.2+0"
 
 [[deps.CompositeTypes]]
 git-tree-sha1 = "02d2316b7ffceff992f3096ae48c7829a8aa0638"
@@ -710,7 +803,7 @@ version = "1.10.2+0"
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 
 [[deps.LinearAlgebra]]
-deps = ["Libdl", "libblastrampoline_jll"]
+deps = ["Libdl", "OpenBLAS_jll", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[deps.LogExpFunctions]]
@@ -735,7 +828,7 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 [[deps.MbedTLS_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
-version = "2.28.0+0"
+version = "2.28.2+0"
 
 [[deps.Metatheory]]
 deps = ["AutoHashEquals", "DataStructures", "Dates", "DocStringExtensions", "Parameters", "Reexport", "TermInterface", "ThreadsX", "TimerOutputs"]
@@ -757,7 +850,7 @@ version = "1.0.2"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
-version = "2022.2.1"
+version = "2022.10.11"
 
 [[deps.MultivariatePolynomials]]
 deps = ["ChainRulesCore", "DataStructures", "LinearAlgebra", "MutableArithmetics"]
@@ -784,7 +877,7 @@ version = "1.2.0"
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
-version = "0.3.20+0"
+version = "0.3.21+4"
 
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -815,9 +908,9 @@ uuid = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 version = "0.12.3"
 
 [[deps.Pkg]]
-deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
+deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-version = "1.8.0"
+version = "1.9.0"
 
 [[deps.PreallocationTools]]
 deps = ["Adapt", "ArrayInterfaceCore", "ForwardDiff"]
@@ -947,7 +1040,7 @@ uuid = "a2af1166-a08f-5f64-846c-94a0d3cef48c"
 version = "1.1.0"
 
 [[deps.SparseArrays]]
-deps = ["LinearAlgebra", "Random"]
+deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [[deps.SpecialFunctions]]
@@ -982,6 +1075,7 @@ version = "1.4.0"
 [[deps.Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+version = "1.9.0"
 
 [[deps.StatsAPI]]
 deps = ["LinearAlgebra"]
@@ -1005,6 +1099,11 @@ version = "1.1.1"
 deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
 uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 
+[[deps.SuiteSparse_jll]]
+deps = ["Artifacts", "Libdl", "Pkg", "libblastrampoline_jll"]
+uuid = "bea87d4a-7f5b-5778-9afe-8cc45184846c"
+version = "5.10.1+6"
+
 [[deps.SymbolicIndexingInterface]]
 deps = ["DocStringExtensions"]
 git-tree-sha1 = "6b764c160547240d868be4e961a5037f47ad7379"
@@ -1026,7 +1125,7 @@ version = "4.13.0"
 [[deps.TOML]]
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
-version = "1.0.0"
+version = "1.0.3"
 
 [[deps.TableTraits]]
 deps = ["IteratorInterfaceExtensions"]
@@ -1099,7 +1198,7 @@ version = "2.0.0"
 [[deps.Zlib_jll]]
 deps = ["Libdl"]
 uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
-version = "1.2.12+3"
+version = "1.2.13+0"
 
 [[deps.ZygoteRules]]
 deps = ["MacroTools"]
@@ -1108,9 +1207,9 @@ uuid = "700de1a5-db45-46bc-99cf-38207098b444"
 version = "0.2.2"
 
 [[deps.libblastrampoline_jll]]
-deps = ["Artifacts", "Libdl", "OpenBLAS_jll"]
+deps = ["Artifacts", "Libdl"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
-version = "5.1.1+0"
+version = "5.4.0+0"
 
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1126,21 +1225,12 @@ version = "17.4.0+0"
 # ╔═╡ Cell order:
 # ╟─9268d453-b7f2-43f6-9af3-0ff54b658598
 # ╠═70065006-585e-4d3d-982f-11eb4746f51a
-# ╠═2b190e59-fc1d-4e15-a2fe-844a0ffb2ad2
-# ╠═afa05511-8c23-4ce6-85fa-7b086198a943
 # ╠═19e2509a-f7a1-49b4-b79f-aae345e29c8e
 # ╠═b6fbaf6d-1bda-4bc0-b963-f6072de4e401
-# ╠═452705ca-833e-4a22-841e-1a272cb5e23d
 # ╠═3db65143-6d6a-4b60-ac49-eb76a16dd59a
 # ╟─d9ddee24-58dc-4db5-a65d-6b17c40cd8ef
 # ╟─c3a5cc00-c4a9-493e-818a-6be87ab5742c
 # ╠═a8479a8f-5268-43be-8d0f-6f29a83fbc59
-# ╟─dbd16483-3d34-422f-aba0-f358ceda4a12
-# ╠═d297b700-bdc5-43dd-b5f6-d685b45ba6cc
-# ╟─7dcbcbea-11bd-4a5e-b837-2170439f11ea
-# ╠═dfbc60cf-894e-466e-8acb-9d4206e75453
-# ╟─d1e895d8-708d-4d47-993c-96dc2d3a939f
-# ╠═c23e5c9b-ab97-4be6-86bb-c75af5010370
 # ╟─725245d1-ac4a-40c4-a17d-0f01f3137fa6
 # ╠═00af5e32-761f-4bcf-82f8-9b584958955d
 # ╠═2a8152f9-da8b-466f-8a58-3cea831ec759
@@ -1158,11 +1248,9 @@ version = "17.4.0+0"
 # ╠═497861b9-738a-466c-868c-21b5c6f16d89
 # ╠═661db8e3-6014-42be-b320-36abbc6f626a
 # ╠═1685198d-4961-4561-aa87-3b8316c89075
-# ╠═136e9636-80d1-4735-a34e-ab4e8273b34a
-# ╟─f53a9d88-bbaf-4314-a3fd-fcc2bce41e11
-# ╠═b185ba09-4108-4db2-8866-7f5b57e030ff
 # ╠═95da1b0f-0633-4f81-8425-375a6d7bb7b8
 # ╟─1a76919a-9d19-488e-889f-e9a5c07630a1
+# ╠═87b38591-46d8-45a1-80c2-1abf4d9a6685
 # ╠═bb237c06-6918-4e25-8f4c-154ced42e02b
 # ╠═037426e9-a38a-4956-86c5-90d1b4a004c8
 # ╠═9943d7bd-4d50-4e51-a6e4-cb913db6500f
@@ -1170,21 +1258,32 @@ version = "17.4.0+0"
 # ╠═d943f094-ed03-440f-a1fa-ba606a5bba62
 # ╠═de32d0d3-5617-4c43-a96f-5cbd0298abb6
 # ╟─1bfcd6f1-74e2-436c-b467-e836ed22da0d
-# ╠═f112d147-5365-4f11-bce3-74e2b91dfc2d
 # ╠═cb30d7bb-4989-4874-87c2-5981dbe3954a
 # ╠═86e53a4e-1956-41d5-81b7-e7b40cdebe1a
 # ╠═2eb39b39-9902-487a-9726-98066d42bafa
 # ╠═4d21e3ff-6fcb-4f21-82e4-5ee162bbf363
 # ╠═0344bcfe-f0ff-45da-b339-2cc0b30a0339
 # ╠═1ea0ab96-2361-40d3-97b2-73c7984b4dad
+# ╟─68304160-1524-42cd-ac97-f65158f65c2d
 # ╠═c52957e2-45fe-492d-b086-a1f5b422344e
 # ╠═d087fcd9-15d3-4e33-9480-f88c2b0aa8c7
+# ╟─5d4cebc4-a156-461b-aa61-4334abbdec03
 # ╠═bbacb260-37a7-4314-be0b-dbaa64905cb7
 # ╠═ba40ce15-4153-4976-a4b8-0106436888f3
 # ╠═7d91316b-3197-4fba-bd4e-3104d5f191cf
 # ╟─0622242c-1646-424a-b6fd-e981cab77ad0
 # ╠═6e9f5dbd-fb4e-4930-9d9b-5eedbc70b997
+# ╟─b871d212-8c1a-4caa-9411-fa35624f47b2
 # ╠═9b1a2f13-0751-4c5c-af1f-8d0acc64c525
 # ╠═77fcee8a-7038-419e-95e4-c792af03f86f
+# ╟─5b2b8f46-d1ad-4570-a05a-7cb44d9a8dff
+# ╠═4e63dcb4-d53d-4bcb-8708-58148bd3e795
+# ╟─e87daf8c-4f3c-4844-bfca-6ca77b804ac6
+# ╠═3f572ed0-60d6-4242-8bf4-3f85f53e6bca
+# ╠═9a78dbba-5e73-4c74-9ec0-395c32d734d9
+# ╟─b06aeb16-7a65-46c0-88d2-351dc0393c19
+# ╟─442b7ecb-7795-4f09-b961-20213ce66a65
+# ╠═f54fb79c-faf0-4ff6-9765-6320e407b6dc
+# ╟─7797b445-a17e-4e2c-8415-6bd42a0e69cb
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
