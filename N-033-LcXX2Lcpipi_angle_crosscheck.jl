@@ -6,14 +6,16 @@ using InteractiveUtils
 
 # ╔═╡ 683556a0-c495-11ec-1724-85835878175b
 begin
-	import Pkg
-	Pkg.add([
-		Pkg.PackageSpec("Corpuscles"),
-		Pkg.PackageSpec(url="https://github.com/mmikhasenko/ThreeBodyDecay.jl")
-	])
-	using ThreeBodyDecay
-	using Corpuscles
-	using Corpuscles.Unitful
+    import Pkg
+    Pkg.activate(mktempdir())
+    # 
+    Pkg.add([
+        Pkg.PackageSpec("Corpuscles"),
+        Pkg.PackageSpec(url="https://github.com/mmikhasenko/ThreeBodyDecay.jl")
+    ])
+    using ThreeBodyDecay
+    using Corpuscles
+    using Corpuscles.Unitful
 end
 
 # ╔═╡ dfba203c-12cf-4e73-b25f-c7521e95b4e4
@@ -23,13 +25,13 @@ md"""
 
 # ╔═╡ 7735bcf3-a395-4ca3-bed9-3e9480fe437b
 begin
-	const mΛcˣˣ = convert(Float64,
-		Particle("Lambda(c)(2625)").mass.value  / 1u"GeV*c^-2")
-	const mΛc = convert(Float64,
-		Particle("Lambda(c)").mass.value  / 1u"GeV*c^-2")
-	const mπ = convert(Float64,
-		Particle("pi").mass.value  / 1u"GeV*c^-2")
-end ;
+    const mΛcˣˣ = convert(Float64,
+        Particle("Lambda(c)(2625)").mass.value / 1u"GeV*c^-2")
+    const mΛc = convert(Float64,
+        Particle("Lambda(c)").mass.value / 1u"GeV*c^-2")
+    const mπ = convert(Float64,
+        Particle("pi").mass.value / 1u"GeV*c^-2")
+end;
 
 # ╔═╡ fce3386c-7e11-4690-8599-437d1ff5e280
 const ms = ThreeBodyMasses(mΛc, mπ, mπ; m0=mΛcˣˣ)
@@ -44,10 +46,10 @@ allcosζ = (:cosζ21_for1, :cosζ21_for2, :cosζ13_for1, :cosζ13_for3, :cosζ32
 allcosθ = (:cosθ23, :cosθ31, :cosθ12)
 
 # ╔═╡ d8526cb4-dfa3-41d4-91a8-0332cd2437c1
-NamedTuple{allcosζ}([eval(:($(a)($(σs0),$(ms^2)))) for a in allcosζ])
+NamedTuple{allcosζ}([eval(:($(a)($(σs0), $(ms^2)))) for a in allcosζ])
 
 # ╔═╡ c956662a-82b9-44a5-bb21-17f49182f58e
-NamedTuple{allcosθ}([eval(:($(a)($(σs0),$(ms^2)))) for a in allcosθ])
+NamedTuple{allcosθ}([eval(:($(a)($(σs0), $(ms^2)))) for a in allcosθ])
 
 # ╔═╡ Cell order:
 # ╟─dfba203c-12cf-4e73-b25f-c7521e95b4e4

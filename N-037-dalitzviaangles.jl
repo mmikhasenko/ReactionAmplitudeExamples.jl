@@ -6,16 +6,19 @@ using InteractiveUtils
 
 # ╔═╡ f7e83510-9fb5-11ec-3f86-ad189b9ee734
 begin
-	import Pkg
-	Pkg.add(Pkg.PackageSpec(url="https://github.com/mmikhasenko/ThreeBodyDecay.jl"))
-	Pkg.add("Plots")
-	# 
-	using ThreeBodyDecay
-	using Plots
+    import Pkg
+    Pkg.activate(mktempdir())
+    # 
+    Pkg.add([
+        Pkg.PackageSpec(url="https://github.com/mmikhasenko/ThreeBodyDecay.jl"),
+        Pkg.PackageSpec("Plots")])
+    # 
+    using ThreeBodyDecay
+    using Plots
 end
 
 # ╔═╡ 7b93b085-9d13-4fd2-abb0-c39bbcb823e1
-ms = ThreeBodyMasses(1.1,0.8,0.3; m0=4.2)
+ms = ThreeBodyMasses(1.1, 0.8, 0.3; m0=4.2)
 
 # ╔═╡ 63a940ea-dcd3-42dd-bdd2-847a1be17ffd
 ms² = ms^2
@@ -27,10 +30,10 @@ data = flatDalitzPlotSample(ms, Nev=1000)
 zst = [(cosθ12=cosθ12(x, ms²), cosθ23=cosθ23(x, ms²)) for x in data]
 
 # ╔═╡ e0abcd0d-eb69-4cd9-8409-9d7c139f2ff3
-scatter(getindex.(data,1), getindex.(data,2))
+scatter(getindex.(data, 1), getindex.(data, 2))
 
 # ╔═╡ 0f5bb842-f86a-446e-a65a-50b45438233c
-scatter(getindex.(zst,1), getindex.(zst,2))
+scatter(getindex.(zst, 1), getindex.(zst, 2))
 
 # ╔═╡ Cell order:
 # ╠═f7e83510-9fb5-11ec-3f86-ad189b9ee734
