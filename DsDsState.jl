@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.4
+# v0.19.12
 
 using Markdown
 using InteractiveUtils
@@ -154,6 +154,17 @@ begin
 	vline!([0.0], lab="", lc=1)
 end
 
+# ╔═╡ eb63fd94-da91-43fa-a3df-4f20e1224ba7
+BW3915(e; p = (m=3.919, Γ=13e-3)) = 1/(p.m^2-e^2-1im*p.m*p.Γ)
+
+# ╔═╡ ce219e0c-7248-4c70-bb19-82645a2214fa
+begin
+	plot(layout=grid(2,1, heights=(0.95,0.05)), link=:x)
+	plot!(e->abs2(BW3915(e2m(e)))*ρ1(e2m(e))*e2m(e), 0, 200, xlab="Δm (MeV)", title="intensity spectrum")
+	plot!(sp=2, yaxis=nothing, frame=:axes, xlab="m (GeV)",
+		xticks = (0:50:200, round.(e2m.(0:50:200); digits=2)))
+end
+
 # ╔═╡ Cell order:
 # ╠═3c395aaa-0660-4d61-bac2-aff30fe8768b
 # ╠═b2775c19-294a-45e4-a106-3bb41e32c8ea
@@ -177,3 +188,5 @@ end
 # ╠═a9c6881c-0890-465f-86f0-72dfac64f16a
 # ╠═0f9ef1b0-01b0-49ca-9c3e-75e333e88f01
 # ╠═283f5839-9fd3-45e8-8927-0e54e3cd0cbf
+# ╠═eb63fd94-da91-43fa-a3df-4f20e1224ba7
+# ╠═ce219e0c-7248-4c70-bb19-82645a2214fa

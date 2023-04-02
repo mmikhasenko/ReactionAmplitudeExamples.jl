@@ -164,7 +164,7 @@ md"""
 md"""
 #### Masses of unobserved states
 
-Mass difference $\Xi_b^{*-} - \Xi_b^{*0}$ : $(@bind shift Slider(3 : 0.01 : 6;	default=ΔmΞbˣ, show_value=true)) MeV
+Mass difference $\Xi_b^{\prime-} - \Xi_b^{\prime0}$ : $(@bind shift Slider(3 : 0.01 : 6;	default=ΔmΞbˣ, show_value=true)) MeV
 
 Mass difference $\Xi_b^{**-}(1/2^-) - \Xi_b^{**0}(1/2^-)$ :
 	$(@bind shiftˣˣ Slider(3 : 0.01 : 6;

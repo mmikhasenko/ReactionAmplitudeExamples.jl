@@ -1,12 +1,14 @@
 ### A Pluto.jl notebook ###
-# v0.16.1
+# v0.19.12
 
 using Markdown
 using InteractiveUtils
 
 # ╔═╡ d8489d70-cf9f-11ec-1f26-0b616e422d52
+# ╠═╡ show_logs = false
 begin
 	import Pkg
+	Pkg.activate(mktempdir())
 	Pkg.add([
 		Pkg.PackageSpec(url="https://github.com/mmikhasenko/ThreeBodyDecay.jl"),
 		Pkg.PackageSpec("Plots"),

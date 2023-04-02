@@ -43,6 +43,9 @@ begin # masses 0 -> 1 2 3
 	const ms = (m1,m2,m3, m0)
 end ;
 
+# ╔═╡ 6bb10249-a27f-4a8b-a3c8-4d2fc6c31dba
+TableOfContents(include_definitions=true)
+
 # ╔═╡ 7bb50d10-724b-11ed-1495-93903e31f551
 """
 	ℳ(m₁₂,m₂₃; pars)
@@ -183,7 +186,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.1"
 manifest_format = "2.0"
-project_hash = "23948e1ebab75bf597f50885c0a218808a9feafd"
+project_hash = "1ba34adc66a98df8e8d7133ab9de1ff488c4d132"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -1158,6 +1161,7 @@ version = "1.4.1+0"
 # ╠═e400defe-9b66-452f-bd0b-7c2c69fe4b28
 # ╠═9a09d6ce-b3da-4b23-9b1d-ec3a29aa476e
 # ╠═42cfa2b2-3db2-4ed7-86f8-24876b20347f
+# ╠═6bb10249-a27f-4a8b-a3c8-4d2fc6c31dba
 # ╠═7bb50d10-724b-11ed-1495-93903e31f551
 # ╠═8df46735-841f-43f4-a7cb-1ddb3483574b
 # ╠═b57524dc-4a3f-48dc-9f5f-bb971a92d575

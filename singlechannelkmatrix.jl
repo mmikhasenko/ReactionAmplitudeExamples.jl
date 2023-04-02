@@ -133,7 +133,7 @@ A2 = @set A.production[1] = 0.0 # only R2 is produced
 
 # ╔═╡ a41bde9a-b410-4f3d-911c-d7191c8a014a
 begin
-	plot(xlab="m(system)", ylab="|A|²")
+	plot(xlab="m(system)", ylab="|A|²", yscale=:log10)
 	plot!(e->abs2(amplitude(A, e^2)), 0.3, 1.9, lab="full")
 	plot!(e->abs2(amplitude(A1, e^2)), 0.3, 1.9, lab="R1")
 	plot!(e->abs2(amplitude(A2, e^2)), 0.3, 1.9, lab="R2")
@@ -163,7 +163,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.1"
 manifest_format = "2.0"
-project_hash = "9942eaffecf833b5f505debea31e3487c518b01b"
+project_hash = "b3d6ff4d9afbf0911d5e1abe08ace5db47d97f24"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
