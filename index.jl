@@ -6,39 +6,39 @@ using InteractiveUtils
 
 # ╔═╡ bdceeb4c-c2bb-4279-86ca-16d4f1ee02f3
 begin
-	using PlutoSliderServer
-	using Dates
-	using Markdown
+    using PlutoSliderServer
+    using Dates
+    using Markdown
 end
 
 
 # ╔═╡ c5461c4b-e7c1-4b3c-ad2b-3b8e6dad0c97
 begin
-	notebooklist = PlutoSliderServer.find_notebook_files_recursive(@__DIR__)
-	sort!(notebooklist)
-	filter!(x->x!="index.jl", notebooklist)
-end ;
+    notebooklist = PlutoSliderServer.find_notebook_files_recursive(@__DIR__)
+    sort!(notebooklist)
+    filter!(x -> x != "index.jl", notebooklist)
+end;
 
 # ╔═╡ 2a6ddc49-26ce-4c3c-ab84-9426a8fc01ed
 let
-	content = "## Table of Notebooks\n"
-	for (i,name) in enumerate(notebooklist)
-		_name = PlutoSliderServer.without_pluto_file_extension(name)
-		_name_html = _name * ".html"
-		content *= " $(i). [**`$(_name)`**]($(_name_html))\n"
-	end
-	Markdown.parse(content)
+    content = "## Table of Notebooks\n"
+    for (i, name) in enumerate(notebooklist)
+        _name = PlutoSliderServer.without_pluto_file_extension(name)
+        _name_html = _name * ".html"
+        content *= " $(i). [**`$(_name)`**]($(_name_html))\n"
+    end
+    Markdown.parse(content)
 end
 
 # ╔═╡ a0e1d472-fb76-11ec-329a-8b376ea620f5
 function header(; title, author)
-	_title = split(title, '\\')[end]
-	t = """
-	# $(_title)
-	by $(author)
-	"""
-	return Markdown.parse(t)
-end ;
+    _title = split(title, '\\')[end]
+    t = """
+    # $(_title)
+    by $(author)
+    """
+    return Markdown.parse(t)
+end;
 
 # ╔═╡ 7d6f2839-57c2-41ba-91b1-836929c51b87
 header(; title="Reaction Amplitude Examples", author="Misha Mikhasenko")
