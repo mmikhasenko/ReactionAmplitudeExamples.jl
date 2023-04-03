@@ -7,22 +7,23 @@ using InteractiveUtils
 # ╔═╡ b2323759-cbb9-4a72-ac40-46076819274f
 # ╠═╡ show_logs = false
 begin
-	using Pkg
-	Pkg.add([
-		Pkg.PackageSpec(url="https://github.com/mmikhasenko/ThreeBodyDecay.jl"),
-		Pkg.PackageSpec("Polynomials"),
-		Pkg.PackageSpec("Plots"),
-		Pkg.PackageSpec("Parameters"),
-		Pkg.PackageSpec("RecipesBase"),
-		Pkg.PackageSpec("NLsolve")
-		])
-	# 
-	using RecipesBase
-	using ThreeBodyDecay
-	using Plots
-	using Polynomials
-	using Parameters
-	using NLsolve
+    using Pkg
+    Pkg.activate(mktempdir())
+    Pkg.add([
+        Pkg.PackageSpec(url="https://github.com/mmikhasenko/ThreeBodyDecay.jl"),
+        Pkg.PackageSpec("Polynomials"),
+        Pkg.PackageSpec("Plots"),
+        Pkg.PackageSpec("Parameters"),
+        Pkg.PackageSpec("RecipesBase"),
+        Pkg.PackageSpec("NLsolve")
+    ])
+    # 
+    using RecipesBase
+    using ThreeBodyDecay
+    using Plots
+    using Polynomials
+    using Parameters
+    using NLsolve
 end
 
 # ╔═╡ edd93652-4d2d-4b50-a8f2-61eea1ea9695
@@ -36,32 +37,32 @@ ms = ThreeBodyMasses(3, 1, 9; m0=14)
 
 # ╔═╡ 823b5793-8c1a-4277-95ed-0f84faf5f088
 function alwaysin(ms)
-	@unpack m0, m1, m2, m3 = ms
-	# 
-	σ1 = ((m2+m3+m0-m1)/2)^2
-	σ3 = σ3of1(0.1,σ1,ms^2)
-	σs2 = Invariants(ms; σ1, σ3)
-	# 
-	σ2 = ((m3+m1+m0-m2)/2)^2
-	σ1 = σ1of2(0,σ2,ms^2)
-	σs3 = Invariants(ms; σ2,σ1)
-	# 
-	σ3 = ((m1+m2+m0-m3)/2)^2
-	σ2 = σ2of3(0,σ3,ms^2)
-	σs1 = Invariants(ms; σ3,σ2)
-	
-	σs = ThreeBodyDecay.MandestamTuple(sum((σs1, σs2, σs3) .|> collect) / 3)
-	[σs1, σs2, σs3, σs]
+    @unpack m0, m1, m2, m3 = ms
+    # 
+    σ1 = ((m2 + m3 + m0 - m1) / 2)^2
+    σ3 = σ3of1(0.1, σ1, ms^2)
+    σs2 = Invariants(ms; σ1, σ3)
+    # 
+    σ2 = ((m3 + m1 + m0 - m2) / 2)^2
+    σ1 = σ1of2(0, σ2, ms^2)
+    σs3 = Invariants(ms; σ2, σ1)
+    # 
+    σ3 = ((m1 + m2 + m0 - m3) / 2)^2
+    σ2 = σ2of3(0, σ3, ms^2)
+    σs1 = Invariants(ms; σ3, σ2)
+
+    σs = ThreeBodyDecay.MandestamTuple(sum((σs1, σs2, σs3) .|> collect) / 3)
+    [σs1, σs2, σs3, σs]
 end
 
 # ╔═╡ fc40eced-a66e-4e08-ad1c-9a5dc39d4ef5
 function σs2rθ(σs, ms)
-	#
-	thresholds = ((ms.m2 + ms.m3), (ms.m3 + ms.m1), (ms.m1 + ms.m2))
+    #
+    thresholds = ((ms.m2 + ms.m3), (ms.m3 + ms.m1), (ms.m1 + ms.m2))
     T0 = sum(abs2, ms) .- sum(abs2, thresholds)
-	#
-	σs0 = alwaysin(ms)[end]
-	Δσs0 = Tuple(σs0) .- thresholds .^ 2
+    #
+    σs0 = alwaysin(ms)[end]
+    Δσs0 = Tuple(σs0) .- thresholds .^ 2
     Δσs = Tuple(σs) .- thresholds .^ 2
     # 
     rcosθ = Δσs0[1] - Δσs[1]
@@ -80,17 +81,17 @@ function fixedborder(ms::ThreeBodyDecay.MassTuple; Nx::Int=300)
     T0 = sum(abs2, ms) .- sum(abs2, thresholds)
 
     # 
-	σs0 = alwaysin(ms)[end]
-	Δσs0 = Tuple(σs0) .- thresholds .^ 2
-	# 
-	Ps(θ) = 
-	    Polynomial([Δσs0[1], -cos(θ)]),
-	    Polynomial([Δσs0[2], cos(θ + π / 3)]),
-	    Polynomial([Δσs0[3], cos(θ - π / 3)])
+    σs0 = alwaysin(ms)[end]
+    Δσs0 = Tuple(σs0) .- thresholds .^ 2
+    # 
+    Ps(θ) =
+        Polynomial([Δσs0[1], -cos(θ)]),
+        Polynomial([Δσs0[2], cos(θ + π / 3)]),
+        Polynomial([Δσs0[3], cos(θ - π / 3)])
     σs_P(θ) = thresholds .^ 2 .+ Ps(θ)
-	# 
-	ϕ = Base.Fix2(Kibble, ms^2)
-	rborder(θ) = minimum(filter(x -> x > 0, roots(ϕ(σs_P(θ)))))
+    # 
+    ϕ = Base.Fix2(Kibble, ms^2)
+    rborder(θ) = minimum(filter(x -> x > 0, roots(ϕ(σs_P(θ)))))
     σsborder(θ) =
         map(σs_P(θ)) do P
             P(rborder(θ))
@@ -107,8 +108,8 @@ rθv = σs2rθ.(σsv, Ref(ms))
 
 # ╔═╡ 947586cf-63a9-4d5e-9caf-a175e3ec8bb2
 plot(
-	plot(NamedTuple{(:σ1, :σ2)}.(σsv), title="Cartesian Dalitz plot"),
-	plot(rθv, title="Polar dalitz plot", proj=:polar, lims=(0, :auto))
+    plot(NamedTuple{(:σ1, :σ2)}.(σsv), title="Cartesian Dalitz plot"),
+    plot(rθv, title="Polar dalitz plot", proj=:polar, lims=(0, :auto))
 )
 
 # ╔═╡ ab731426-ce4b-4e8f-bb67-a7b9391269e0
@@ -116,16 +117,16 @@ function rlimsdalitz(θ, ms)
     thresholds = ((ms.m2 + ms.m3), (ms.m3 + ms.m1), (ms.m1 + ms.m2))
     T0 = sum(abs2, ms) .- sum(abs2, thresholds)
     # 
-	σs0 = alwaysin(ms)[end]
-	Δσs0 = Tuple(σs0) .- thresholds .^ 2
-	# 
-	Ps = 
-	    Polynomial([Δσs0[1], -cos(θ)]),
-	    Polynomial([Δσs0[2], cos(θ + π / 3)]),
-	    Polynomial([Δσs0[3], cos(θ - π / 3)])
-	# 
+    σs0 = alwaysin(ms)[end]
+    Δσs0 = Tuple(σs0) .- thresholds .^ 2
+    # 
+    Ps =
+        Polynomial([Δσs0[1], -cos(θ)]),
+        Polynomial([Δσs0[2], cos(θ + π / 3)]),
+        Polynomial([Δσs0[3], cos(θ - π / 3)])
+    # 
     σs_P = thresholds .^ 2 .+ Ps
-	# 
+    # 
     ϕ = Base.Fix2(Kibble, ms^2)
     rmax = minimum(filter(x -> x > 0, roots(ϕ(σs_P))))
     return rmax
@@ -155,37 +156,37 @@ md"""
 """
 
 # ╔═╡ 8cf51a81-aae5-4680-b900-968d0b3df5ff
-function scalledmasses(α,ms)
-	m_min = minimum([ms.m1,ms.m2,ms.m3])
-	return ThreeBodyMasses(
-		m_min+α*(ms.m1-m_min),
-		m_min+α*(ms.m2-m_min),
-		m_min+α*(ms.m3-m_min);
-		m0=3m_min+α*(ms.m0-3m_min))
+function scalledmasses(α, ms)
+    m_min = minimum([ms.m1, ms.m2, ms.m3])
+    return ThreeBodyMasses(
+        m_min + α * (ms.m1 - m_min),
+        m_min + α * (ms.m2 - m_min),
+        m_min + α * (ms.m3 - m_min);
+        m0=3m_min + α * (ms.m0 - 3m_min))
 end
 
 # ╔═╡ 44efb115-adde-4c67-9833-6451b9952220
 rθborder(ms) = σs2rθ.(fixedborder(ms), Ref(ms))
 
 # ╔═╡ 5c0adba5-6cb3-4fe6-8f44-ebeb9cca26b4
-function rθ2σs(θr::NamedTuple{(:θ,:r)},
-	ms::ThreeBodyDecay.MassTuple)
-	#
-	@unpack θ,r = θr
-	# 
-	thresholds = ((ms.m2 + ms.m3), (ms.m3 + ms.m1), (ms.m1 + ms.m2))
-	# 
-	σs0 = alwaysin(ms)[end]
-	Δσs0 = Tuple(σs0) .- thresholds .^ 2
-	# 
-	Ps = 
-	    Polynomial([Δσs0[1], -cos(θ)]),
-	    Polynomial([Δσs0[2], cos(θ + π / 3)]),
-	    Polynomial([Δσs0[3], cos(θ - π / 3)])
-	# 
-	σs = thresholds .^ 2 .+ map.(Ps, r)
-	# 
-	ThreeBodyDecay.MandestamTuple(σs)
+function rθ2σs(θr::NamedTuple{(:θ, :r)},
+    ms::ThreeBodyDecay.MassTuple)
+    #
+    @unpack θ, r = θr
+    # 
+    thresholds = ((ms.m2 + ms.m3), (ms.m3 + ms.m1), (ms.m1 + ms.m2))
+    # 
+    σs0 = alwaysin(ms)[end]
+    Δσs0 = Tuple(σs0) .- thresholds .^ 2
+    # 
+    Ps =
+        Polynomial([Δσs0[1], -cos(θ)]),
+        Polynomial([Δσs0[2], cos(θ + π / 3)]),
+        Polynomial([Δσs0[3], cos(θ - π / 3)])
+    # 
+    σs = thresholds .^ 2 .+ map.(Ps, r)
+    # 
+    ThreeBodyDecay.MandestamTuple(σs)
 end
 
 # ╔═╡ 0f94bc6d-0084-4136-8613-de48bc877149
@@ -195,42 +196,42 @@ Test that the transformation ∘ inv_transformation = 1
 
 # ╔═╡ 89b5cf5e-20bf-4de0-9522-f019536e84b6
 begin
-	σs_i = randomPoint(ms)
-	σs_i_back = rθ2σs(σs2rθ(σs_i,ms), ms)
-	@assert prod(collect(σs_i_back) .≈ collect(σs_i))
+    σs_i = randomPoint(ms)
+    σs_i_back = rθ2σs(σs2rθ(σs_i, ms), ms)
+    @assert prod(collect(σs_i_back) .≈ collect(σs_i))
 end
 
 # ╔═╡ 1bab77b3-9efb-425c-9227-6b6312f3764f
 begin
-	plot(rθborder(ms), proj =:polar, lims=(0, :auto))
-	for α  in 0.1:0.1:0.9
-		plot!(rθborder(scalledmasses(α,ms)), proj =:polar, lims=(0, :auto))
-	end
-	scatter!(σs2rθ.([σs_i], Ref(ms)), proj =:polar, m=(6,:red))
-	plot!()
-	# 
-	scatter!(σs2rθ.(alwaysin(ms)[1:3], Ref(ms)), proj =:polar, α=0.2)
-	scatter!(σs2rθ.([alwaysin(ms)[end]], Ref(ms)), proj =:polar)
+    plot(rθborder(ms), proj=:polar, lims=(0, :auto))
+    for α in 0.1:0.1:0.9
+        plot!(rθborder(scalledmasses(α, ms)), proj=:polar, lims=(0, :auto))
+    end
+    scatter!(σs2rθ.([σs_i], Ref(ms)), proj=:polar, m=(6, :red))
+    plot!()
+    # 
+    scatter!(σs2rθ.(alwaysin(ms)[1:3], Ref(ms)), proj=:polar, α=0.2)
+    scatter!(σs2rθ.([alwaysin(ms)[end]], Ref(ms)), proj=:polar)
 end
 
 # ╔═╡ 55214e81-d896-4b58-b2c1-75c84ea35ffd
 function σs2α(rθ, ms)
-	function Kibble_α(sqrtα)
-		msα = scalledmasses(sqrtα^2,ms)
-		Kibble(rθ2σs(rθ, msα), msα^2)
-	end
-	#
-	sqrtα = nlsolve(n_ary(Kibble_α), [1.0]).zero[1]
-	α = sqrtα^2
-	α > 1 && error("α = $α > 1")
-	return sqrtα^2
+    function Kibble_α(sqrtα)
+        msα = scalledmasses(sqrtα^2, ms)
+        Kibble(rθ2σs(rθ, msα), msα^2)
+    end
+    #
+    sqrtα = nlsolve(n_ary(Kibble_α), [1.0]).zero[1]
+    α = sqrtα^2
+    α > 1 && error("α = $α > 1")
+    return sqrtα^2
 end
 
 # ╔═╡ 24fee2f9-c808-41e3-ba6c-aa6824fd3174
 function σs2θα(σs, ms)
-	rθ = σs2rθ(σs, ms)
-	α = σs2α(rθ, ms)
-	(; rθ.θ, α=α)
+    rθ = σs2rθ(σs, ms)
+    α = σs2α(rθ, ms)
+    (; rθ.θ, α=α)
 end
 
 # ╔═╡ 1dcc0b4b-cff0-4448-bf89-e32dcd4ceda8
@@ -240,8 +241,8 @@ data_σs = flatDalitzPlotSample(ms; Nev=100_000);
 data_θα = σs2θα.(data_σs, Ref(ms));
 
 # ╔═╡ 48353bd2-ddb7-4eb1-858d-ed6406b93da8
-data_xy = map(data_θα) do (θ,r)
-	(r*cos(θ), r*sin(θ))
+data_xy = map(data_θα) do (θ, r)
+    (r * cos(θ), r * sin(θ))
 end;
 
 # ╔═╡ 736d2191-3682-4ca5-989d-099c13393132

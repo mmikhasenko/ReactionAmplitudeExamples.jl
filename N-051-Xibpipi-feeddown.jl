@@ -7,7 +7,11 @@ using InteractiveUtils
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
     quote
-        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local iv = try
+            Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value
+        catch
+            b -> missing
+        end
         local el = $(esc(element))
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
         el
@@ -19,10 +23,11 @@ end
 begin
     # cd(mktempdir())
     using Pkg
-    Pkg.add([PackageSpec("Plots"),
+    Pkg.activate(mktempdir())
+    Pkg.add([
+        PackageSpec("Plots"),
         PackageSpec("PlutoUI"),
-        PackageSpec(
-            url="https://github.com/mmikhasenko/ThreeBodyDecay.jl")])
+        PackageSpec(url="https://github.com/mmikhasenko/ThreeBodyDecay.jl")])
     # 
     using Plots
     using ThreeBodyDecay
@@ -87,7 +92,7 @@ end
 function isrealistic((a, b, c))
     (charge(a) == charge(b) == charge(c)) &&
         (mass(a) > mass(b) > mass(c)) &&
-    (b[2] == c[2] || b[2] == c[3])
+        (b[2] == c[2] || b[2] == c[3])
 end
 
 # ╔═╡ 6353d970-bcf0-4749-8294-33abc38e2f4d
@@ -144,10 +149,10 @@ end
 feeddownQ13(path) = feeddown13(path) .- mass((path[3][[1, 3]]...,))
 
 # ╔═╡ a992d625-c3a1-4604-9686-8eeb8173b3c5
-function isSwave((a,b,c))
-	isspinhalf_Ξbˣˣ = string(a[1].symbol)[8]=='1'
-	isspinhalf = string(b[1].symbol)[4]=='′'
-	return isspinhalf_Ξbˣˣ == isspinhalf
+function isSwave((a, b, c))
+    isspinhalf_Ξbˣˣ = string(a[1].symbol)[8] == '1'
+    isspinhalf = string(b[1].symbol)[4] == '′'
+    return isspinhalf_Ξbˣˣ == isspinhalf
 end
 
 # ╔═╡ 7756e2ea-05b0-478a-935d-b68bae55a3f7
@@ -224,24 +229,24 @@ begin
     # 
     π⁰ = Particle(:π⁰, mπ⁰, 0)
     πᶜ = Particle(:πᶜ, mπᶜ, -1)
-end ;
+end;
 
 # ╔═╡ 97cda745-dbd8-4138-8767-7806bb7a8303
 allpaths = let
-	xx_states = ((Ξbˣˣ1hᶜ,), (Ξbˣˣ3hᶜ,), (Ξbˣˣ1h⁰,), (Ξbˣˣ3h⁰,))
-	xpi_states = [(x, y) for x in [Ξb′⁰, Ξb′ᶜ, Ξbˣ⁰, Ξbˣᶜ]
-	              for y in (π⁰, πᶜ)]
-	pipi_states = let pi = (π⁰, πᶜ)
-	    [(x, pi[y], pi[z]) for x in [Ξb⁰, Ξbᶜ]
-	     for y in 1:2 for z in y:2]
-	end
-	# combine 
-	[(xx, xpi, pipi) for xx in xx_states
-	            for xpi in xpi_states for pipi in pipi_states]
-end ;
+    xx_states = ((Ξbˣˣ1hᶜ,), (Ξbˣˣ3hᶜ,), (Ξbˣˣ1h⁰,), (Ξbˣˣ3h⁰,))
+    xpi_states = [(x, y) for x in [Ξb′⁰, Ξb′ᶜ, Ξbˣ⁰, Ξbˣᶜ]
+                  for y in (π⁰, πᶜ)]
+    pipi_states = let pi = (π⁰, πᶜ)
+        [(x, pi[y], pi[z]) for x in [Ξb⁰, Ξbᶜ]
+         for y in 1:2 for z in y:2]
+    end
+    # combine 
+    [(xx, xpi, pipi) for xx in xx_states
+     for xpi in xpi_states for pipi in pipi_states]
+end;
 
 # ╔═╡ 2d4b0498-d05e-4927-a21f-2eff73fce3f2
-realisticpaths = filter(isrealistic, allpaths) ;
+realisticpaths = filter(isrealistic, allpaths);
 
 # ╔═╡ c04ade76-3a10-4527-852c-adff841424c2
 measurablepaths = filter(realisticpaths) do (a, b, c)
@@ -278,7 +283,7 @@ let
     m -> plot!((mass(m) - mΞbᶜ - mπᶜ) + 1im .+ [-1, 1];
         fill=0, alpha=0.5, lab=string(m))
     # Qranges .|> Qs->plot!(Qs .+ 0.5im, fill=0, alpha=0.3)
-    f1 .|> path -> plot!(feeddownQ13(path) .+ (1im*(1+isSwave(path))/4), fill=0, alpha=0.3,
+    f1 .|> path -> plot!(feeddownQ13(path) .+ (1im * (1 + isSwave(path)) / 4), fill=0, alpha=0.3,
         lab=string(path[1][1]) * "→ $(path[2][1])(→$(path[3][1]) $(path[3][2])) $(path[3][3])")
     plot!(xlab="m(Ξbᶜ πᶜ)-m(Ξbᶜ)-m(πᶜ) (MeV)", ylab="")
 end
@@ -296,7 +301,7 @@ let
     [Ξb′ᶜ, Ξbˣᶜ] .|>
     m -> plot!((mass(m) - mΞb⁰ - mπᶜ) + 1im .+ [-1, 1];
         fill=0, alpha=0.5, lab=string(m))
-    f2 .|> path -> plot!(feeddownQ13(path) .+ (1im*(1+isSwave(path))/4), fill=0, alpha=0.3,
+    f2 .|> path -> plot!(feeddownQ13(path) .+ (1im * (1 + isSwave(path)) / 4), fill=0, alpha=0.3,
         lab=string(path[1][1]) * "→ $(path[2][1])(→$(path[3][1]) $(path[3][2])) $(path[3][3])")
     plot!(xlab="m(Ξb⁰ πᶜ)-m(Ξb⁰)-m(πᶜ) (MeV)", ylab="")
 end
