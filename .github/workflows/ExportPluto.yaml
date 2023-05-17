@@ -4,6 +4,10 @@ on:
         branches:
             - main
             - master
+    pull_request:
+        branches:
+            - main
+            - master
     workflow_dispatch:
 
 # When two jobs run in parallel, cancel the older ones, to make sure that the website is generated from the most recent commit.
@@ -23,7 +27,7 @@ jobs:
             - name: Install Julia
               uses: julia-actions/setup-julia@v1
               with:
-                  version: 1.7
+                  version: 1.7.3
 
             - name: Cache Julia artifacts & such
               uses: julia-actions/cache@v1
@@ -54,8 +58,9 @@ jobs:
                     Export_cache_dir="pluto_state_cache",
                     Export_baked_notebookfile=false,
                     Export_baked_state=false,
-                    # more parameters can go here
-                  )'
+                  )
+                  
+                  PlutoSliderServer.export_notebook("index.jl")'
 
 
             - name: Deploy to gh-pages

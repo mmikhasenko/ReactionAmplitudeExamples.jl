@@ -1,0 +1,152 @@
+---
+title: Four-body phase space weights
+author: Misha Mikhasenko
+date: 15th November 2019
+options:
+    dpi : 200
+    fig_env : "figure"
+    fig_ext : ".pdf"
+    out_width : "0.7\\textwidth"
+---
+
+```julia; results="hidden"; echo=false
+import PyCall
+import PyPlot: matplotlib
+PyCall.PyDict(matplotlib["rcParams"])["font.family"] = "serif:bold"
+# PyCall.PyDict(matplotlib["rcParams"])["font.weight"] = "bold"
+PyCall.PyDict(matplotlib["rcParams"])["font.serif"] = "Helvetica" #"STIX"
+PyCall.PyDict(matplotlib["rcParams"])["mathtext.fontset"] = "dejavusans"#"Helvetica"
+PyCall.PyDict(matplotlib["rcParams"])["text.usetex"] = true
+#
+using Plots
+using LaTeXStrings
+pyplot(size=(500,350))
+```
+
+## Introduction and the question
+
+A reaction under consideration is a diffractive three-pion production
+$$
+\newcommand{\diff}{\mathrm{d}}
+\begin{equation}
+\pi_\text{b}\, p_\text{t} \to 3\pi\,p_\text{r}.
+\end{equation}
+$$
+The high energy pion, $\pi_\text{b}$ scatters off the proton target, $p_\text{t}$.
+A system of three pions is produced while the proton in tact, $p_\text{r}$, recoils and carry out the transferred mometum.
+
+```julia; results="hidden"
+const mπ = 0.14 # GeV
+const mp = 0.938 # GeV
+const Eb = 191 # GeV
+const s0 = mp^2+2mp*Eb # GeV
+```
+
+The $s_0$ is a total invariant mass of the system squared,
+$s$ is the invariant mass of the $3\pi$ squared, the two-pion masses squared are denoted $\sigma_i$, $i=1,2,3$.
+The momentum transferred to the recoil squared is denoted $t$.
+$t' = |t|-|t|_ \text{min}(s)$ is positive quantity convenient to parametrize the production amplitude.
+
+
+MC weighting technique allows one to plot distributions for any model by assigning a weight to events.
+In case the MC sample is distributed according to the phase space, the weights are just the studies ampliutude
+squared.
+
+The MC sample for the reaction (1) is produced homogenious in $\sqrt{s}$ using exponential distribution for $t'$, $\exp(-\alpha\,t')$.
+It does not corresponds to the phase-space distribution therefore requires reweighting.
+The goal of this note is to give the expression for the weight that account for the generation distributions.
+
+I assume that the generation of the events proceeds in the following way:
+ - random $\sqrt{s}$ is picked up in the set range using uniform distribution, e.g. $[0.5, 3.5]\,$GeV
+ - random t' is picked in the range $[0,t'_ \text{max}]$, with $t'_ \text{max} = |t|_ \text{max}-|t|_ \text{min}$ using exponential distribution.
+ - the other variables are drawn according to the phase space.
+
+## Four-body phase space
+
+First, we split off the four-body phase space introducing an integral over the invariant mass squared of the three pions:
+$$
+\begin{equation}
+\diff \Phi_4 = \frac{\diff s}{2\pi} \,\diff \Phi_2(s_0;s,m_p^2)\,\diff \Phi_3(s;m_\pi^2,m_\pi^2,m_\pi^2).
+\end{equation}
+$$
+where notations are intuitive.
+The two-body phase space can be written via $t$, or $t'$.
+$$
+\begin{align}
+\diff \Phi_2 &= \frac{1}{8\pi} \frac{\lambda^{1/2}(s_0,s,m_p^2)}{s_0} \frac{\diff \phi}{2\pi} \frac{\diff\cos\theta}{2}\\
+             &= \frac{1}{8\pi} \frac{\lambda^{1/2}(s_0,s,m_p^2)}{s_0} \frac{\diff \phi}{2\pi} \frac{s_0\diff t}{\lambda^{1/2}(s_0,m_\pi^2,m_p^2) \lambda^{1/2}(s_0,s,m_p^2)}\\
+             &= \frac{1}{8\pi} \frac{\diff t}{\lambda^{1/2}(s_0,m_\pi,m_p^2)} \frac{\diff \phi}{2\pi}
+\end{align}
+$$
+Hence,
+$$
+\begin{equation}
+\diff \Phi_4 = \frac{\diff t'\, \diff s}{2\pi\,(8\pi) \,\lambda^{1/2}(s_0,m_\pi,m_p^2)} \frac{\diff \phi}{2\pi}\,\diff \Phi_3(s;m_\pi^2,m_\pi^2,m_\pi^2).
+\end{equation}
+$$
+When the $s\times t'$ distribution is considered and all other variables are integrated over,
+the probability density function reads,
+$$
+\begin{align}
+\frac{\diff \Phi_4}{\diff s\,\diff t'} &\sim \Phi_3(s;m_\pi^2,m_\pi^2,m_\pi^2) \sim \frac{1}{s} \int_\text{Dalitz} \diff\sigma_1 \diff\sigma_2\\
+& \sim \frac{1}{s}\int_{\sigma^-(\sigma)}^{\sigma^+(\sigma)} \diff\sigma \frac{\lambda^{1/2}(s,\sigma,m_\pi^2)\lambda^{1/2}(\sigma,m_\pi^2),m_\pi^2)}{\sigma}.
+\end{align}
+$$
+
+Here is the julia code that calculates it,
+```julia
+using QuadGK
+λ(x,y,z) = x^2+y^2+z^2-2*x*y-2*y*z-2*z*x
+Φ3(s) = quadgk(σ->sqrt(λ(s,σ,mπ^2)*λ(σ,mπ^2,mπ^2))/σ, 4mπ^2, (√s-mπ)^2)[1]/s
+#
+plot(e->Φ3(e^2), 0.5, 3.5, size=(500,350),
+    lab=L"\Phi_3(m_{3\pi})", xlab=L"m_{3\pi}\,(\mathrm{GeV})",
+    title="Three-body phase space")
+```
+
+## The intensity distribution and weight
+For a given model with intensity $I(s,t')$ (other variables are skipped for simplicity),
+the required distribution follows from the previous equation
+$$
+\begin{align} \label{eq:correct.distr}
+\frac{\diff I}{\diff s\,\diff t'}  = I(s,t') \Phi_3(s;m_\pi^2,m_\pi^2,m_\pi^2),
+\end{align}
+$$
+while the phase space is generated according to
+$$
+\begin{align} \label{eq:used.distr}
+\frac{\diff W_0}{\diff s\,\diff t'}  = \frac{1}{\sqrt{s} g(s)} e^{-\alpha\,t'},
+\end{align}
+$$
+with the factor $1/\sqrt{s}$ correcting for the usage of $\sqrt{s}$ instread of $s$,
+the functions $g(s)$ correcting for change of the $t'$ range. It reads,
+$$
+\begin{equation}
+g(s) = \int_0^{t'_ \text{max}(s)} \diff t' e^{-\alpha\,t'},\quad\text\quad
+t'_ \text{max}(s) = \frac{\lambda(s_0,s,m_p^2)* \lambda(s_0,m_\pi^2,m_p^2)}{s_0}.
+\end{equation}
+$$
+
+Comparing two distributions we find the weight that correct for the mismatch.
+$$
+\begin{equation}
+w(s) = I(s,t') \Phi_3(s)\,/\,\left(\frac{1}{\sqrt{s} g(s)} e^{-\alpha\,t'}\right)
+\end{equation}
+$$
+
+## Practical advices
+
+ - A simplification emerges when the $t'$ dependence in the model is the same as used in MC generation, i.e. $I(s,t') = \exp(-\alpha\, t') I(s)$. The expression for the weight simplifies.
+ - The function $g(s)$ does not have strong $s$-dependence as soon as $t'_ \text{max}(s) > 3/\alpha$. The condition is met in the range $\sqrt{s} \in [0.5,3.5]$, hence, the factor $g(s)$ can be dropped.
+
+Here is the check for the last statement:
+```julia
+t_prime_max(s) = sqrt(λ(s0,s,mp^2)*λ(s0,mπ^2,mp^2))/s0
+const α = 9 # 1/GeV^2
+g(s) = quadgk(tp->exp(-α*tp), 0, t_prime_max(s))[1]
+#
+const n = g(3.0^2) # normalization
+plot(e->g(e^2) / n, 0.5, 3.5, title = "correction factor g(s)",
+    lab=L"g(m_{3\pi}^2)", xlab=L"m_{3\pi}\,(\mathrm{GeV})",
+    ylim = (0.99,1.01), size=(500,350))
+```
