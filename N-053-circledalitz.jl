@@ -26,6 +26,13 @@ begin
     using NLsolve
 end
 
+# ╔═╡ 0270aecb-b6c2-4d29-8760-77642194838e
+md"""
+# Circular Dalitz Mapping
+
+The notebook demonstrate the mapping algorithm of an arbitrary dalitz plot to a unite circle that preserve the symmatry between the Mandelsam variables
+"""
+
 # ╔═╡ edd93652-4d2d-4b50-a8f2-61eea1ea9695
 theme(:wong2, frame=:box, grid=false, minorticks=true,
     guidefontvalign=:top, guidefonthalign=:right,
@@ -58,12 +65,9 @@ end
 # ╔═╡ fc40eced-a66e-4e08-ad1c-9a5dc39d4ef5
 function σs2rθ(σs, ms)
     #
-    thresholds = ((ms.m2 + ms.m3), (ms.m3 + ms.m1), (ms.m1 + ms.m2))
-    T0 = sum(abs2, ms) .- sum(abs2, thresholds)
-    #
     σs0 = alwaysin(ms)[end]
-    Δσs0 = Tuple(σs0) .- thresholds .^ 2
-    Δσs = Tuple(σs) .- thresholds .^ 2
+    Δσs0 = Tuple(σs0)
+    Δσs = Tuple(σs)
     # 
     rcosθ = Δσs0[1] - Δσs[1]
     rcosθmπ3 = Δσs[3] - Δσs0[3]
@@ -77,18 +81,13 @@ end
 
 # ╔═╡ dc1b8aa0-1cd6-44ce-9e3f-0d56bfc269ac
 function fixedborder(ms::ThreeBodyDecay.MassTuple; Nx::Int=300)
-    thresholds = ((ms.m2 + ms.m3), (ms.m3 + ms.m1), (ms.m1 + ms.m2))
-    T0 = sum(abs2, ms) .- sum(abs2, thresholds)
-
     # 
     σs0 = alwaysin(ms)[end]
-    Δσs0 = Tuple(σs0) .- thresholds .^ 2
     # 
-    Ps(θ) =
-        Polynomial([Δσs0[1], -cos(θ)]),
-        Polynomial([Δσs0[2], cos(θ + π / 3)]),
-        Polynomial([Δσs0[3], cos(θ - π / 3)])
-    σs_P(θ) = thresholds .^ 2 .+ Ps(θ)
+    σs_P(θ) =
+        Polynomial([σs0[1], -cos(θ)]),
+        Polynomial([σs0[2], cos(θ + π / 3)]),
+        Polynomial([σs0[3], cos(θ - π / 3)])
     # 
     ϕ = Base.Fix2(Kibble, ms^2)
     rborder(θ) = minimum(filter(x -> x > 0, roots(ϕ(σs_P(θ)))))
@@ -114,18 +113,12 @@ plot(
 
 # ╔═╡ ab731426-ce4b-4e8f-bb67-a7b9391269e0
 function rlimsdalitz(θ, ms)
-    thresholds = ((ms.m2 + ms.m3), (ms.m3 + ms.m1), (ms.m1 + ms.m2))
-    T0 = sum(abs2, ms) .- sum(abs2, thresholds)
-    # 
     σs0 = alwaysin(ms)[end]
-    Δσs0 = Tuple(σs0) .- thresholds .^ 2
     # 
-    Ps =
-        Polynomial([Δσs0[1], -cos(θ)]),
-        Polynomial([Δσs0[2], cos(θ + π / 3)]),
-        Polynomial([Δσs0[3], cos(θ - π / 3)])
-    # 
-    σs_P = thresholds .^ 2 .+ Ps
+    σs_P =
+        Polynomial([σs0[1], -cos(θ)]),
+        Polynomial([σs0[2], cos(θ + π / 3)]),
+        Polynomial([σs0[3], cos(θ - π / 3)])
     # 
     ϕ = Base.Fix2(Kibble, ms^2)
     rmax = minimum(filter(x -> x > 0, roots(ϕ(σs_P))))
@@ -174,17 +167,14 @@ function rθ2σs(θr::NamedTuple{(:θ, :r)},
     #
     @unpack θ, r = θr
     # 
-    thresholds = ((ms.m2 + ms.m3), (ms.m3 + ms.m1), (ms.m1 + ms.m2))
-    # 
     σs0 = alwaysin(ms)[end]
-    Δσs0 = Tuple(σs0) .- thresholds .^ 2
     # 
     Ps =
-        Polynomial([Δσs0[1], -cos(θ)]),
-        Polynomial([Δσs0[2], cos(θ + π / 3)]),
-        Polynomial([Δσs0[3], cos(θ - π / 3)])
+        Polynomial([σs0[1], -cos(θ)]),
+        Polynomial([σs0[2], cos(θ + π / 3)]),
+        Polynomial([σs0[3], cos(θ - π / 3)])
     # 
-    σs = thresholds .^ 2 .+ map.(Ps, r)
+    σs = map.(Ps, r)
     # 
     ThreeBodyDecay.MandestamTuple(σs)
 end
@@ -249,6 +239,7 @@ end;
 histogram2d(data_xy, aspect_ratio=1, bins=100)
 
 # ╔═╡ Cell order:
+# ╟─0270aecb-b6c2-4d29-8760-77642194838e
 # ╠═b2323759-cbb9-4a72-ac40-46076819274f
 # ╠═edd93652-4d2d-4b50-a8f2-61eea1ea9695
 # ╠═fc40eced-a66e-4e08-ad1c-9a5dc39d4ef5
