@@ -15,7 +15,10 @@ md"""
 # Dispersive phase space
 
 The notebook computes the dispesion integral for the higher waves
-that include the Blatt-Weisskopf functions
+that include the Blatt-Weisskopf functions.
+
+The l-wave dispesion integrals without formfactors (l-subtracted) are provided in the closed form by 
+[Reid and Trofimenkoff](https://pubs.aip.org/aip/jmp/article/25/12/3540/226182/A-generating-function-for-Chew-Mandelstam).
 """
 
 # ╔═╡ e063834f-a560-44a1-8153-9e3724292124
