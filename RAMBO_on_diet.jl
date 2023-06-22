@@ -1,160 +1,114 @@
 ### A Pluto.jl notebook ###
-# v0.19.22
+# v0.19.26
 
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ caba8b40-f646-11ed-1702-f354e5a4345f
-begin
-	using QuadGK
-	using Plots
-end
+# ╔═╡ 08cf497a-3d50-431b-a659-8ed5fede5f66
+using Plots
 
-# ╔═╡ af990363-d0e5-437a-8abc-4a71098f2f84
+# ╔═╡ 7b447281-716a-4b2f-bace-c0116e1e3e5c
+using NLsolve
+
+# ╔═╡ d9df0789-37b9-4361-8f98-3c3f87dc65bd
 md"""
-# Dispersive phase space
+# RAMBO on diet
 
-The notebook computes the dispesion integral for the higher waves
-that include the Blatt-Weisskopf functions.
+In the process of simulating multi-particle systems, the RAMBO (RAndom Momenta Beautifully Organized) algorithm is often used to generate flat phase space. This algorithm involves a transformation from u variables, representing the scaled mass of the subsystem, to v variables, which are random variables in the range [0,1]. This transformation is designed to achieve a flat result for the measure for the intermediate masses when all external masses vanish.
 
-The l-wave dispesion integrals without formfactors (l-subtracted) are provided in the closed form by 
-[Reid and Trofimenkoff](https://pubs.aip.org/aip/jmp/article/25/12/3540/226182/A-generating-function-for-Chew-Mandelstam).
+The v variables are particularly easy to generate, for instance, by using a random number generator such as rand(). However, in order to obtain the masses of the subsystems, we need to invert this transformation and calculate the corresponding u variables. This is where the inversion of the transformation comes into play.
 """
 
-# ╔═╡ e063834f-a560-44a1-8153-9e3724292124
+# ╔═╡ 83f65db8-a2d7-4d1c-993b-4e593751bf1f
 theme(:wong2, frame=:box, grid=false, minorticks=true,
     guidefontvalign=:top, guidefonthalign=:right,
     xlim=(:auto, :auto), ylim=(:auto, :auto),
     lw=1.2, lab="")
 
-# ╔═╡ 7dccb3f8-79fd-4926-952c-5dc9a641c6fb
-function invF²(l, z²)
-    l == 0 && return one(z²)
-    l == 1 && return 1 + z²
-    l == 2 && return 9 + 3z² + z²^2
-    l == 3 && return 225 + 45z² + 6z²^2 + z²^3
-    l == 4 && return 11025 + 1575z² + 135z²^2 + 10z²^3 + z²^4
-    l == 5 && return 893025 + 99225z² + 6300z²^2 + 315z²^3 + 15z²^4 + z²^5
-    l == 6 && return 108056025 + 9823275z² + 496125z²^2 + 18900z²^3 + 630z²^4 + 21z²^5 + z²^6
-    l == 7 && return 18261468225 + 1404728325z² + 58939650z²^2 + 1819125z²^3 + 47250z²^4 + 1134z²^5 + 28z²^6 + z²^7
-    0 > l > 7 && error("0 > l=$l > 7 are not implemented")
-    return zero(z²)
+# ╔═╡ 38ce5f45-40ea-4276-b7ba-d559dbe3b133
+v_func(u,n,i) = (n + 1 - i) * u^(n-i) - (n - i) * u^(n+1-i)
+
+# ╔═╡ 7e4581ce-f4f6-11ed-04e2-0d048a99e96f
+function calculate_u(v, n, i)
+    # Initialize a guess for u
+    u_guess = 0.5
+
+	# Define the function
+	f(u) = v - v_func(u,n,i)
+	
+	# Define the derivative of f(u)
+	df(u) = -(n + 1 - i) * (n - i) * u^(n-i-1) + (n - i) * (n + 1 - i) * u^(n-i)
+	
+    # Use Newton's method to find the root of f(u)
+    for _ in 1:200
+        u_next = u_guess - f(u_guess) / df(u_guess)
+        if abs(u_next - u_guess) < 1e-6
+            return u_next
+        end
+        u_guess = u_next
+    end
+
+    error("Newton's method did not converge")
 end
 
-# ╔═╡ b1b62e84-239d-4bae-a213-6527c442baa9
-md"""
-## Kinematics
-```math
-\begin{align}
-\text{break-up momentum:} &&& k = \frac{\lambda^{1/2}(s,m_1^2,m2^2)}{2\sqrt{s}}\,,\\
-\text{phase space:} &&& \rho = \frac{2k}{\sqrt{s}}\,,\\
-\text{thr.f $\times$ FF $\times$ ph.sp :} &&& \rho k^{2l}\text{F}_l^2 = \frac{2k^{1}}{\sqrt{s}} \frac{k^2}{\text{Blatt-Weisskopf stuff}}
-\end{align}
-```
-"""
+# ╔═╡ 24fa82fa-87b3-4e8e-abd2-01c8c2bd6de7
+function calculate_u_nl(v, n, i)
+    function f!(F, u)
+        F[1] = v - v_func(u[1],n,i)
+    end
 
-# ╔═╡ f4cb937b-65a2-4877-8d84-4e10c8b7e279
-λ(x,y,z) = x^2+y^2+z^2-2x*y-2y*z-2z*x
+    # Use NLsolve to find the root of f(u)
+    result = nlsolve(f!, [0.5]; method = :newton, autodiff = :forward)
 
-# ╔═╡ 2f398f87-2ea8-4b56-b674-513a01384d84
-k(s, m1, m2) = sqrt(λ(s, m1^2, m2^2))/(2*sqrt(s))
-
-# ╔═╡ 347d0a0d-ff60-424d-bbaa-1e5b6432be77
-function ρ(s, m1, m2, l, R)
-	s < (m1 + m2)^2 && return 0.0
-	_k = k(s, m1, m2)
-	2*_k^(2l+1) / sqrt(s) / invF²(l, (_k*R)^2) * R^(2l)
+    # Check if the solver converged and return the solution
+    if converged(result)
+        return result.zero[1]
+    else
+        error("Solver did not converge")
+    end
 end
 
-# ╔═╡ f2778fe4-9467-4412-bb97-3d057d92bf71
-md"""
-## Dispesion integral
-Once-subtractted dispersion integral reads
-```math
-D(s) = \frac{s}{\pi} \int_{s_\text{th}}^{\infty} \frac{f(s')}{s'(s'-s-i\epsilon)}\mathrm{d}s'
-```
 
-Imaginary part of the integral expression, $\text{Im}\,D(s)$ matches the integrand $f(s)$ due to the Cauchy theorem.
-"""
-
-# ╔═╡ 8499c49e-3576-49cd-bc45-1f4f2c6d84b1
-function dispersion_integral(f, x, sth)
-	iϵ = 1e-6im
-	integrand(x′) = f(x′)/(x′*(x′-x-iϵ))
-	return quadgk(integrand, sth, Inf)[1] / π *x
-end
-
-# ╔═╡ 865d2895-95ae-4ca4-b622-51b8be3f8a8e
-function dispesive_ρ(s, m1, m2, l, R)
-	f(x) = ρ(x, m1, m2, l, R)
-	return dispersion_integral(f, s, (m1+m2)^2)
-end
-
-# ╔═╡ 75802173-aee0-4362-a97b-37e61e7967ce
-md"""
-## Example of evaluation
-"""
-
-# ╔═╡ a3c78440-1e55-488b-b4d0-bc678f38143b
-begin
-	const m1=1.0
-	const m2=1.3
-	const mrange = (m1+m2, 7)
-	const R = 1.5 # 1/GeV 
-end;
-
-# ╔═╡ e2a36b6d-4ee4-478a-aff9-8f411612aecd
+# ╔═╡ fc5ecaed-5eb9-4ec5-8b3b-cb39a40293ee
 let
-	plot(title = "thr.f × FF × ph.sp.", xlab="mass (GeV)", ylab="Integrand")
-	for l in 0:5
-		ρl(e) = ρ(e^2, m1, m2, l, R)
-		plot!(ρl, mrange..., lab="l=$l")
+	(n, i) = (3, 1)
+	u0 = 0.3
+	v0 = v_func(u0, 3, 1)
+	u0′ = calculate_u(v0, n, i)
+	u0′′ = calculate_u_nl(v0, n, i)
+	# 
+	u0, u0′, u0′′
+end
+
+# ╔═╡ 07ac96e5-5535-4ac6-bf01-23f276f338cb
+let
+	n = 5
+	plot(title="v(u) relation", xlab="u", ylab="v")
+	for i in 1:n-1
+		plot!(u->v_func(u,n,i), 0, 1, lab="i=$i")
 	end
 	plot!()
 end
 
-# ╔═╡ ee3e4a02-75b5-4cff-8567-aaf3d606c887
+# ╔═╡ ff0f1e5b-acda-4127-a213-77d454e270b1
 let
-	m1=1.0
-	m2=1.3
-	mth = m1+m2
-	mrange = (mth, 7)
-	R = 1.5 # 1/GeV 
-	# 
-	plot(size=(600,600),title=["Dispersion integral" ""],
-		xlab=["" "mass (GeV)"],
-		ylab=["Re" "Im"] .* " D(s)",
-		layout=grid(2,1), link=:x)
-	for l in 0:5
-		ρl(e) = dispesive_ρ(e^2, m1^2, m2^2, l, R)
-		plot!(sp=1, real ∘ ρl, mrange..., lab="l=$l")
-		plot!(sp=2, imag ∘ ρl, mrange..., lab="l=$l")
+	n = 5
+	plot(title="u(v) relation", xlab="v", ylab="u")
+	for i in 1:n-1
+		plot!(v->calculate_u(v, n, i), 0, 1, lab="i=$i")
 	end
 	plot!()
 end
-
-# ╔═╡ 0d8d6b86-608f-4ce6-ae34-737223fabcbb
-md"""
-**Note:** the dispesion integral is perfectly defined for complex argument
-"""
-
-# ╔═╡ 56d4a9c2-54bb-47e5-8042-e335a6650ed6
-let
-	s_complex = 1.1+1im
-	l = 1
-	# 
-	@show dispesive_ρ(s_complex, m1, m2, l, R)
-end ;
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+NLsolve = "2774e3e8-f4cf-5e23-947b-6d7e65073b56"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 
 [compat]
+NLsolve = "~4.5.1"
 Plots = "~1.38.12"
-QuadGK = "~2.8.2"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -163,11 +117,43 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.9.0"
 manifest_format = "2.0"
-project_hash = "52509062c1da4a3dbea4e87008b283ee43a03dd7"
+project_hash = "b9564a9e21b3c1422a77af924ce350969870c8f7"
+
+[[deps.Adapt]]
+deps = ["LinearAlgebra", "Requires"]
+git-tree-sha1 = "76289dc51920fdc6e0013c872ba9551d54961c24"
+uuid = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
+version = "3.6.2"
+weakdeps = ["StaticArrays"]
+
+    [deps.Adapt.extensions]
+    AdaptStaticArraysExt = "StaticArrays"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
 version = "1.1.1"
+
+[[deps.ArrayInterface]]
+deps = ["Adapt", "LinearAlgebra", "Requires", "SparseArrays", "SuiteSparse"]
+git-tree-sha1 = "917286faa2abb288796e75b88ca67edc016f3219"
+uuid = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
+version = "7.4.5"
+
+    [deps.ArrayInterface.extensions]
+    ArrayInterfaceBandedMatricesExt = "BandedMatrices"
+    ArrayInterfaceBlockBandedMatricesExt = "BlockBandedMatrices"
+    ArrayInterfaceCUDAExt = "CUDA"
+    ArrayInterfaceGPUArraysCoreExt = "GPUArraysCore"
+    ArrayInterfaceStaticArraysCoreExt = "StaticArraysCore"
+    ArrayInterfaceTrackerExt = "Tracker"
+
+    [deps.ArrayInterface.weakdeps]
+    BandedMatrices = "aae01518-5342-5314-be14-df237901396f"
+    BlockBandedMatrices = "ffab5731-97b5-5995-9138-79e8c1846df0"
+    CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+    GPUArraysCore = "46192b85-c4d5-4398-a991-12ede77f4527"
+    StaticArraysCore = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
+    Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
@@ -222,6 +208,12 @@ git-tree-sha1 = "fc08e5930ee9a4e03f84bfb5211cb54e7769758a"
 uuid = "5ae59095-9a9b-59fe-a467-6f913c188581"
 version = "0.12.10"
 
+[[deps.CommonSubexpressions]]
+deps = ["MacroTools", "Test"]
+git-tree-sha1 = "7b8a93dba8af7e3b42fecabf646260105ac373f7"
+uuid = "bbf7d656-a473-5ed7-a52c-81e309532950"
+version = "0.3.0"
+
 [[deps.Compat]]
 deps = ["UUIDs"]
 git-tree-sha1 = "7a60c856b9fa189eb34f5f8a6f6b5529b7942957"
@@ -242,6 +234,20 @@ deps = ["Serialization", "Sockets"]
 git-tree-sha1 = "96d823b94ba8d187a6d8f0826e731195a74b90e9"
 uuid = "f0e56b4a-5159-44fe-b623-3e5288b988bb"
 version = "2.2.0"
+
+[[deps.ConstructionBase]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "738fec4d684a9a6ee9598a8bfee305b26831f28c"
+uuid = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
+version = "1.5.2"
+
+    [deps.ConstructionBase.extensions]
+    ConstructionBaseIntervalSetsExt = "IntervalSets"
+    ConstructionBaseStaticArraysExt = "StaticArrays"
+
+    [deps.ConstructionBase.weakdeps]
+    IntervalSets = "8197267c-284f-5f27-9208-e0e47529a953"
+    StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [[deps.Contour]]
 git-tree-sha1 = "d05d9e7b7aedff4e5b51a029dced05cfb6125781"
@@ -268,6 +274,28 @@ deps = ["Mmap"]
 git-tree-sha1 = "9e2f36d3c96a820c678f2f1f1782582fcf685bae"
 uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 version = "1.9.1"
+
+[[deps.DiffResults]]
+deps = ["StaticArraysCore"]
+git-tree-sha1 = "782dd5f4561f5d267313f23853baaaa4c52ea621"
+uuid = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
+version = "1.1.0"
+
+[[deps.DiffRules]]
+deps = ["IrrationalConstants", "LogExpFunctions", "NaNMath", "Random", "SpecialFunctions"]
+git-tree-sha1 = "a4ad7ef19d2cdc2eff57abbbe68032b1cd0bd8f8"
+uuid = "b552c78f-8df3-52c6-915a-8e097449b14b"
+version = "1.13.0"
+
+[[deps.Distances]]
+deps = ["LinearAlgebra", "SparseArrays", "Statistics", "StatsAPI"]
+git-tree-sha1 = "49eba9ad9f7ead780bfb7ee319f962c811c6d3b2"
+uuid = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
+version = "0.10.8"
+
+[[deps.Distributed]]
+deps = ["Random", "Serialization", "Sockets"]
+uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[deps.DocStringExtensions]]
 deps = ["LibGit2"]
@@ -301,6 +329,12 @@ version = "4.4.2+2"
 [[deps.FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
+[[deps.FiniteDiff]]
+deps = ["ArrayInterface", "LinearAlgebra", "Requires", "Setfield", "SparseArrays", "StaticArrays"]
+git-tree-sha1 = "6604e18a0220650dbbea7854938768f15955dd8e"
+uuid = "6a86dc24-6348-571c-b903-95158fe2bd41"
+version = "2.20.0"
+
 [[deps.FixedPointNumbers]]
 deps = ["Statistics"]
 git-tree-sha1 = "335bfdceacc84c5cdf16aadc768aa5ddfc5383cc"
@@ -319,6 +353,16 @@ git-tree-sha1 = "8339d61043228fdd3eb658d86c926cb282ae72a8"
 uuid = "59287772-0a20-5a39-b81b-1366585eb4c0"
 version = "0.4.2"
 
+[[deps.ForwardDiff]]
+deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "LinearAlgebra", "LogExpFunctions", "NaNMath", "Preferences", "Printf", "Random", "SpecialFunctions"]
+git-tree-sha1 = "00e252f4d706b3d55a8863432e742bf5717b498d"
+uuid = "f6369f11-7733-5829-9624-2563aa707210"
+version = "0.10.35"
+weakdeps = ["StaticArrays"]
+
+    [deps.ForwardDiff.extensions]
+    ForwardDiffStaticArraysExt = "StaticArrays"
+
 [[deps.FreeType2_jll]]
 deps = ["Artifacts", "Bzip2_jll", "JLLWrappers", "Libdl", "Pkg", "Zlib_jll"]
 git-tree-sha1 = "87eb71354d8ec1a96d4a7636bd57a7347dde3ef9"
@@ -330,6 +374,10 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "aa31987c2ba8704e23c6c8ba8a4f769d5d7e4f91"
 uuid = "559328eb-81f9-559d-9380-de523a88c83c"
 version = "1.0.10+0"
+
+[[deps.Future]]
+deps = ["Random"]
+uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
 
 [[deps.GLFW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Pkg", "Xorg_libXcursor_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll"]
@@ -524,6 +572,12 @@ git-tree-sha1 = "7f3efec06033682db852f8b3bc3c1d2b0a0ab066"
 uuid = "38a345b3-de98-5d2b-a5d3-14cd9215e700"
 version = "2.36.0+0"
 
+[[deps.LineSearches]]
+deps = ["LinearAlgebra", "NLSolversBase", "NaNMath", "Parameters", "Printf"]
+git-tree-sha1 = "7bbea35cec17305fc70a0e5b4641477dc0789d9d"
+uuid = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
+version = "7.2.0"
+
 [[deps.LinearAlgebra]]
 deps = ["Libdl", "OpenBLAS_jll", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -592,6 +646,18 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 version = "2022.10.11"
 
+[[deps.NLSolversBase]]
+deps = ["DiffResults", "Distributed", "FiniteDiff", "ForwardDiff"]
+git-tree-sha1 = "a0b464d183da839699f4c79e7606d9d186ec172c"
+uuid = "d41bc354-129a-5804-8e4c-c37616107c6c"
+version = "7.8.3"
+
+[[deps.NLsolve]]
+deps = ["Distances", "LineSearches", "LinearAlgebra", "NLSolversBase", "Printf", "Reexport"]
+git-tree-sha1 = "019f12e9a1a7880459d0173c182e6a99365d7ac1"
+uuid = "2774e3e8-f4cf-5e23-947b-6d7e65073b56"
+version = "4.5.1"
+
 [[deps.NaNMath]]
 deps = ["OpenLibm_jll"]
 git-tree-sha1 = "0877504529a3e5c3343c6f8b4c0381e57e4387e4"
@@ -651,6 +717,12 @@ version = "1.6.0"
 deps = ["Artifacts", "Libdl"]
 uuid = "efcefdf7-47ab-520b-bdef-62a2eaa19f15"
 version = "10.42.0+0"
+
+[[deps.Parameters]]
+deps = ["OrderedCollections", "UnPack"]
+git-tree-sha1 = "34c0e9ad262e5f7fc75b10a9952ca7692cfc5fbe"
+uuid = "d96e819e-fc66-5662-9728-84c9c7592b0a"
+version = "0.12.3"
 
 [[deps.Parsers]]
 deps = ["Dates", "PrecompileTools", "UUIDs"]
@@ -728,12 +800,6 @@ git-tree-sha1 = "0c03844e2231e12fda4d0086fd7cbe4098ee8dc5"
 uuid = "ea2cea3b-5b76-57ae-a6ef-0a8af62496e1"
 version = "5.15.3+2"
 
-[[deps.QuadGK]]
-deps = ["DataStructures", "LinearAlgebra"]
-git-tree-sha1 = "6ec7ac8412e83d57e313393220879ede1740f9ee"
-uuid = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
-version = "2.8.2"
-
 [[deps.REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
@@ -784,6 +850,12 @@ version = "1.2.0"
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 
+[[deps.Setfield]]
+deps = ["ConstructionBase", "Future", "MacroTools", "StaticArraysCore"]
+git-tree-sha1 = "e2cc6d8c88613c05e1defb55170bf5ff211fbeac"
+uuid = "efcf1570-3423-57d1-acb7-fd33fddbac46"
+version = "1.1.1"
+
 [[deps.Showoff]]
 deps = ["Dates", "Grisu"]
 git-tree-sha1 = "91eddf657aca81df9ae6ceb20b959ae5653ad1de"
@@ -820,6 +892,17 @@ version = "2.2.0"
     [deps.SpecialFunctions.weakdeps]
     ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 
+[[deps.StaticArrays]]
+deps = ["LinearAlgebra", "Random", "StaticArraysCore", "Statistics"]
+git-tree-sha1 = "8982b3607a212b070a5e46eea83eb62b4744ae12"
+uuid = "90137ffa-7385-5640-81b9-e52037218182"
+version = "1.5.25"
+
+[[deps.StaticArraysCore]]
+git-tree-sha1 = "6b7ba252635a5eff6a0b0664a41ee140a1c9e72a"
+uuid = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
+version = "1.4.0"
+
 [[deps.Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
@@ -836,6 +919,10 @@ deps = ["DataAPI", "DataStructures", "LinearAlgebra", "LogExpFunctions", "Missin
 git-tree-sha1 = "d1bf48bfcc554a3761a133fe3a9bb01488e06916"
 uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 version = "0.33.21"
+
+[[deps.SuiteSparse]]
+deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
+uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 
 [[deps.SuiteSparse_jll]]
 deps = ["Artifacts", "Libdl", "Pkg", "libblastrampoline_jll"]
@@ -876,6 +963,11 @@ version = "1.4.2"
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
+
+[[deps.UnPack]]
+git-tree-sha1 = "387c1f73762231e86e0c9c5443ce3b4a0a9a0c2b"
+uuid = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
+version = "1.0.2"
 
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
@@ -1123,22 +1215,15 @@ version = "1.4.1+0"
 """
 
 # ╔═╡ Cell order:
-# ╟─af990363-d0e5-437a-8abc-4a71098f2f84
-# ╠═caba8b40-f646-11ed-1702-f354e5a4345f
-# ╠═e063834f-a560-44a1-8153-9e3724292124
-# ╠═7dccb3f8-79fd-4926-952c-5dc9a641c6fb
-# ╟─b1b62e84-239d-4bae-a213-6527c442baa9
-# ╠═f4cb937b-65a2-4877-8d84-4e10c8b7e279
-# ╠═2f398f87-2ea8-4b56-b674-513a01384d84
-# ╠═347d0a0d-ff60-424d-bbaa-1e5b6432be77
-# ╟─f2778fe4-9467-4412-bb97-3d057d92bf71
-# ╠═8499c49e-3576-49cd-bc45-1f4f2c6d84b1
-# ╠═865d2895-95ae-4ca4-b622-51b8be3f8a8e
-# ╟─75802173-aee0-4362-a97b-37e61e7967ce
-# ╠═a3c78440-1e55-488b-b4d0-bc678f38143b
-# ╠═e2a36b6d-4ee4-478a-aff9-8f411612aecd
-# ╠═ee3e4a02-75b5-4cff-8567-aaf3d606c887
-# ╟─0d8d6b86-608f-4ce6-ae34-737223fabcbb
-# ╠═56d4a9c2-54bb-47e5-8042-e335a6650ed6
+# ╟─d9df0789-37b9-4361-8f98-3c3f87dc65bd
+# ╠═08cf497a-3d50-431b-a659-8ed5fede5f66
+# ╠═7b447281-716a-4b2f-bace-c0116e1e3e5c
+# ╠═83f65db8-a2d7-4d1c-993b-4e593751bf1f
+# ╠═38ce5f45-40ea-4276-b7ba-d559dbe3b133
+# ╠═7e4581ce-f4f6-11ed-04e2-0d048a99e96f
+# ╠═24fa82fa-87b3-4e8e-abd2-01c8c2bd6de7
+# ╠═fc5ecaed-5eb9-4ec5-8b3b-cb39a40293ee
+# ╠═07ac96e5-5535-4ac6-bf01-23f276f338cb
+# ╠═ff0f1e5b-acda-4127-a213-77d454e270b1
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
