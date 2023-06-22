@@ -267,36 +267,59 @@ end
 # ╔═╡ aab3ddac-fae2-4a68-afe4-b8828df3c237
 ζχ2σs(σs2ζχ(σs_i, ms), ms), σs_i
 
+# ╔═╡ 49ae880a-8acb-425c-9031-ad94a952ef30
+xxx(σ1σ2) = σs2ζχ(_Invariants(ms; σ1=σ1σ2[1], σ2 = σ1σ2[2]), ms)
+
 # ╔═╡ 25c6c066-e511-459a-990f-7d5063f23483
-σs2ζχ_jacobian(σs, ms) = 
-	ForwardDiff.jacobian(collect(σs)[1:2]) do σ1σ2
-		σs2ζχ(_Invariants(ms; NamedTuple{(:σ1, :σ2)}(σ1σ2)...), ms)
-	end
+σs2ζχ_jacobian(σs, ms) = ForwardDiff.jacobian(xxx, collect(σs)[1:2])
+
+# ╔═╡ 2257dd4f-9480-404b-a43f-6fdb3ab2a130
+md"""
+## Cross check
+"""
 
 # ╔═╡ 58d6ef6b-855c-4057-916d-97033c102b2f
-σs2ζχ_jacobian(σs_i, ms)
-
-# ╔═╡ 4ecc9880-5418-4f3a-95a3-1b69e673a97c
-ForwardDiff.gradient([110.0, 160]) do σ1σ2
-		σs2ζχ(_Invariants(ms; σ2 = σ1σ2[2], σ1=σ1σ2[1]), ms)[1]
-	end
+jaco = σs2ζχ_jacobian([110,160], ms)
 
 # ╔═╡ 14c7cdd4-aaef-4259-a263-7ef9f309e4cd
-ForwardDiff.gradient([110.0, 160]) do σ1σ2
-		σs2ζχ(_Invariants(ms; σ2 = σ1σ2[2], σ1=σ1σ2[1]), ms)[2]
-	end
+grads = hcat(
+	ForwardDiff.gradient([110, 160]) do σ1σ2
+			xxx(σ1σ2)[1]
+	end,
+	ForwardDiff.gradient([110, 160]) do σ1σ2
+		xxx(σ1σ2)[2]
+	end) |> transpose
+
+# ╔═╡ 5c03220f-01d7-4be5-8f09-97dff3f5a918
+ForwardDiff.gradient(σ1σ2->xxx(σ1σ2)[1], [110, 160])
+
+# ╔═╡ 99a405a0-9062-4f69-b9fa-7428c07279d1
+let ϵ = 1e-6
+	(xxx([110,160+ϵ])[1] - xxx([110,160])[1])/ϵ
+end
 
 # ╔═╡ 7e174855-5875-48ea-b51a-227d13b9fb5f
-let ϵ = 1e-6
-	xxx(σ1σ2) = σs2ζχ(_Invariants(ms; σ1=σ1σ2[1], σ2 = σ1σ2[2]), ms)
+finite = let ϵ = 1e-6
 	hcat(
 		(xxx([110+ϵ,160]) - xxx([110-ϵ,160])) / 2ϵ,
 		(xxx([110,160+ϵ]) - xxx([110,160-ϵ])) / 2ϵ
-	)
+	) |> transpose
 end
 
-# ╔═╡ 3d44e28e-ba17-46a0-ba37-5d57ff61c5a7
-σs2ζχ_jacobian(σs_i, ms)
+# ╔═╡ e01118fb-b988-43ea-8fc7-973d2dd1789d
+yyy(ζχ) = let ϵ = 1e-6
+	σ12 = (ζχ2σs(ζχ, ms) |> collect)[1:2]
+	hcat(
+		(xxx(σ12 + [0,ϵ]) - xxx(σ12)) / 2ϵ,
+		(xxx(σ12 + [ϵ,0]) - xxx(σ12)) / 2ϵ
+	) |> det
+end
+
+# ╔═╡ fdb11760-24c1-475d-b1d6-373ff907a9db
+yyy([0.3,0.5])
+
+# ╔═╡ 31903638-516e-4562-9515-1c371810149c
+finite ./ grads
 
 # ╔═╡ 6300912a-3e8e-4868-9944-1e7bd64cb5b9
 ζχ_jacobian(ζχ, ms) = det(σs2ζχ_jacobian(ζχ2σs(ζχ, ms), ms))
@@ -304,15 +327,12 @@ end
 # ╔═╡ 22378478-cf42-49c0-aa9b-557e3f036d7e
 ζχ_jacobian([0.2,0.3], ms)
 
-# ╔═╡ 891df957-d9ac-4ef7-a0f5-dd9d0167fc0a
-norm([0.3,0.4])
-
 # ╔═╡ a2efb67a-2551-490d-b36b-dc2fb1816bdb
 let
-	xv = range(-1,1, 30)
-	yv = range(-1,1, 30)
-	calv = [norm([x,y]) > 1 ? NaN : ζχ_jacobian([x,y], ms) for x in xv, y in yv]
-	heatmap(xv,yv,calv, aspect_ratio=1)
+	xv = range(-0.1, 0.1, 50)
+	yv = range(-0.1, 0.1, 50) # ζχ_jacobian([x,y], ms)
+	calv = [norm([x,y]) > 1 ? NaN : yyy([x,y]) for x in xv, y in yv]
+	heatmap(xv,yv,calv, aspect_ratio=1, c=:viridis, colorbar=true)
 end
 
 # ╔═╡ 55214e81-d896-4b58-b2c1-75c84ea35ffd
@@ -365,15 +385,19 @@ histogram2d(data_ζχ, aspect_ratio=1, bins=100)
 # ╠═aa661d42-5273-4f63-a71a-795a20d1da14
 # ╠═af7c35b6-971f-4860-811b-4a6b9acb4017
 # ╠═aab3ddac-fae2-4a68-afe4-b8828df3c237
+# ╠═49ae880a-8acb-425c-9031-ad94a952ef30
 # ╠═25c6c066-e511-459a-990f-7d5063f23483
+# ╟─2257dd4f-9480-404b-a43f-6fdb3ab2a130
 # ╠═58d6ef6b-855c-4057-916d-97033c102b2f
-# ╠═4ecc9880-5418-4f3a-95a3-1b69e673a97c
 # ╠═14c7cdd4-aaef-4259-a263-7ef9f309e4cd
+# ╠═5c03220f-01d7-4be5-8f09-97dff3f5a918
+# ╠═99a405a0-9062-4f69-b9fa-7428c07279d1
 # ╠═7e174855-5875-48ea-b51a-227d13b9fb5f
-# ╠═3d44e28e-ba17-46a0-ba37-5d57ff61c5a7
+# ╠═e01118fb-b988-43ea-8fc7-973d2dd1789d
+# ╠═fdb11760-24c1-475d-b1d6-373ff907a9db
+# ╠═31903638-516e-4562-9515-1c371810149c
 # ╠═6300912a-3e8e-4868-9944-1e7bd64cb5b9
 # ╠═22378478-cf42-49c0-aa9b-557e3f036d7e
-# ╠═891df957-d9ac-4ef7-a0f5-dd9d0167fc0a
 # ╠═a2efb67a-2551-490d-b36b-dc2fb1816bdb
 # ╠═55214e81-d896-4b58-b2c1-75c84ea35ffd
 # ╠═1dcc0b4b-cff0-4448-bf89-e32dcd4ceda8
