@@ -18,4 +18,3 @@ using Pluto
 Pluto.run() # a new tab will open in the browser
 # navigate to notebook file N-XXX-Cool_stuff.jl
 ```
-
