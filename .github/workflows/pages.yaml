@@ -20,6 +20,12 @@ jobs:
         with:
           cache-registries: "true"
 
+      - name: Update README.md and convert to index.html, add CSS
+        run: |
+          julia list_notebooks.jl
+          sudo apt-get install pandoc
+          pandoc README.md -s -o README.html
+
       # We set up a folder that Pluto can use to cache exported notebooks. If the notebook file did not change, then Pluto can take the exported file from cache instead of running the notebook.
       - name: Set up notebook state cache
         uses: actions/cache@v2
@@ -44,12 +50,6 @@ jobs:
               Export_baked_notebookfile=false,
               Export_baked_state=false,
             )'
-
-      - name: Update README.md and convert to index.html, add CSS
-        run: |
-          julia list_notebooks.jl
-          sudo apt-get install pandoc
-          pandoc README.md -s -o README.html
 
       - name: Deploy to gh-pages
         uses: JamesIves/github-pages-deploy-action@releases/v4
