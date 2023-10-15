@@ -22,7 +22,7 @@ jobs:
 
       - name: Update README.md and convert to index.html, add CSS
         run: |
-          julia list_notebooks.jl
+          julia notebooks/list_notebooks.jl
           sudo apt-get install pandoc
           pandoc README.md -s -o README.html
 
