@@ -6,36 +6,36 @@ using InteractiveUtils
 
 # ╔═╡ f9470de0-371f-11ec-1d6d-fdcd8de5d285
 begin
-	using QuadGK
-	using Plots
-	using LaTeXStrings
+    using QuadGK
+    using Plots
+    using LaTeXStrings
 end
 
 # ╔═╡ f43f26b6-a855-4259-b2f6-de6e98c79895
 # 2021-10-27 Misha Mikhasenko
 
 # ╔═╡ 7fcc7169-9939-4316-9ed5-d1c5e04f5817
-theme(:wong2, size=(500,350), minorticks=true, grid=false, frame=:box,
+theme(:wong2, size=(500, 350), minorticks=true, grid=false, frame=:box,
     guidefontvalign=:top, guidefonthalign=:right,
-    foreground_color_legend = nothing,
-    legendfontsize=9, legend =:topright,
-    xlim=(:auto,:auto), ylim=(:auto,:auto), lab="",
-	xlab=L"m(\Xi_c^+K^-)-m(\Xi_c^+)-m(K^-)\,\,\,\,[\mathrm{MeV}]")
+    foreground_color_legend=nothing,
+    legendfontsize=9, legend=:topright,
+    xlim=(:auto, :auto), ylim=(:auto, :auto), lab="",
+    xlab=L"m(\Xi_c^+K^-)-m(\Xi_c^+)-m(K^-)\,\,\,\,[\mathrm{MeV}]")
 
 # ╔═╡ 2d5b1925-d63d-4d47-8752-6aed91f8a504
 md"""
-# Phase space suppression of $\Xi_c^{\prime+}K^-$ over $\,\,\Xi_c^+K^-$ for $\,\,\Omega_c^0(3065)$
+## Phase space suppression of $\Xi_c^{\prime+}K^-$ over $\,\,\Xi_c^+K^-$ for $\,\,\Omega_c^0(3065)$
 """
 
 # ╔═╡ d5d07378-d5ec-4e70-ab58-23db0b0d65c2
 begin
-	const mΞc = 2467.8e-3
-	const mK  = 493.677e-3
-# 	
-	const mΞc′ = 2578.2e-3
-# 	
-	const mΩc3065 = 3065.6e-3
-	const ΓΩc3065 = 3.5e-3
+    const mΞc = 2467.8e-3
+    const mK = 493.677e-3
+    # 	
+    const mΞc′ = 2578.2e-3
+    # 	
+    const mΩc3065 = 3065.6e-3
+    const ΓΩc3065 = 3.5e-3
 end;
 
 # ╔═╡ 23fcaf28-4354-4069-9fe7-4b8048333d02
@@ -45,17 +45,17 @@ md"""
 
 # ╔═╡ d15cdb75-9f0e-4941-882b-7fa2e1d4c075
 begin
-	# Kallen functioion
-	λ(x,y,z) = x^2+y^2+z^2-2x*y-2y*z-2z*x
-	# phase space
-	ρ(s) = sqrt(λ(s,mΞc^2,mK^2))/s
-	ρ′(s) = sqrt(λ(s,mΞc′^2,mK^2))/s
+    # Kallen functioion
+    λ(x, y, z) = x^2 + y^2 + z^2 - 2x * y - 2y * z - 2z * x
+    # phase space
+    ρ(s) = sqrt(λ(s, mΞc^2, mK^2)) / s
+    ρ′(s) = sqrt(λ(s, mΞc′^2, mK^2)) / s
 end
 
 # ╔═╡ c28e6ce1-22dc-4419-aa59-e70f23399335
 begin
-	e2m(e) = mΞc+mK+e*1e-3
-	m2e(m) = (m-mΞc-mK)*1e3
+    e2m(e) = mΞc + mK + e * 1e-3
+    m2e(m) = (m - mΞc - mK) * 1e3
 end
 
 # ╔═╡ f407c442-a2bc-4f7f-b27f-4336e248bde4
@@ -65,31 +65,31 @@ md"""
 
 # ╔═╡ 5c66f493-2480-4171-8e86-6ea683980f44
 begin
-	bw(s,m,Γ) = m*Γ/(m^2-s-1im*m*Γ)
-	bwΩc3065(s) = bw(s,mΩc3065,ΓΩc3065)
+    bw(s, m, Γ) = m * Γ / (m^2 - s - 1im * m * Γ)
+    bwΩc3065(s) = bw(s, mΩc3065, ΓΩc3065)
 end
 
 # ╔═╡ b698a238-ff47-4c96-86bf-c6a9719b9a3e
-M²(s,g=1) = abs2(g*bwΩc3065(s))
+M²(s, g=1) = abs2(g * bwΩc3065(s))
 
 # ╔═╡ f4b81045-a06d-406c-aa8c-19c51f8e3182
 p2 = let
-	plot()
-	plot!(e->M²(e2m(e)^2)*e2m(e), 0, 200, lab="|BW|²")
-	plot!(e->ρ(e2m(e)^2)*e2m(e), m2e(mΞc+mK), 200, lab="ρ(ΞcK)")
-	plot!(e->ρ′(e2m(e)^2)*e2m(e), m2e(mΞc′+mK), 200, lab="ρ(Ξc′K)")
+    plot()
+    plot!(e -> M²(e2m(e)^2) * e2m(e), 0, 200, lab="|BW|²")
+    plot!(e -> ρ(e2m(e)^2) * e2m(e), m2e(mΞc + mK), 200, lab="ρ(ΞcK)")
+    plot!(e -> ρ′(e2m(e)^2) * e2m(e), m2e(mΞc′ + mK), 200, lab="ρ(Ξc′K)")
 end
 
 # ╔═╡ ea358251-63d5-4a9a-b4b3-8afcbcde2f45
 p1 = let
-	plot()
-	plot!(e->M²(e2m(e)^2)*ρ(e2m(e)^2)*e2m(e), m2e(mΞc+mK), 200, lab="|M|²ρ(ΞcK)",c=2)
-	plot!(e->10*M²(e2m(e)^2)*ρ′(e2m(e)^2)*e2m(e), m2e(mΞc′+mK), 200, lab="|M|²ρ(Ξc′K) × 10",c=3)
+    plot()
+    plot!(e -> M²(e2m(e)^2) * ρ(e2m(e)^2) * e2m(e), m2e(mΞc + mK), 200, lab="|M|²ρ(ΞcK)", c=2)
+    plot!(e -> 10 * M²(e2m(e)^2) * ρ′(e2m(e)^2) * e2m(e), m2e(mΞc′ + mK), 200, lab="|M|²ρ(Ξc′K) × 10", c=3)
 end
 
 # ╔═╡ 2ddc6d8b-12de-486d-9901-279605299307
-ℝ =	quadgk(s->M²(s)*ρ(s), (mΞc+mK)^2, Inf)[1] /
-	quadgk(s->M²(s)*ρ′(s), (mΞc′+mK)^2, Inf)[1]
+ℝ = quadgk(s -> M²(s) * ρ(s), (mΞc + mK)^2, Inf)[1] /
+    quadgk(s -> M²(s) * ρ′(s), (mΞc′ + mK)^2, Inf)[1]
 
 # ╔═╡ be0face7-6cd9-4eb7-a332-5e94471abd3b
 md"""
@@ -115,7 +115,7 @@ $\begin{align}
 """
 
 # ╔═╡ a05bd12f-6a68-43c8-a541-0bc9dca9f7e8
-𝔹_exp = 1/0.2
+𝔹_exp = 1 / 0.2
 
 # ╔═╡ 2ebe1678-feb6-4971-9784-68973d91d13b
 md"""
@@ -123,7 +123,7 @@ md"""
 """
 
 # ╔═╡ a0d9e547-d1c5-4abe-af15-40d1692d0739
-g_ΞcK_over_Ξc′K = sqrt(𝔹_exp/ℝ)
+g_ΞcK_over_Ξc′K = sqrt(𝔹_exp / ℝ)
 
 # ╔═╡ 978634ed-c5c1-4287-949d-33a643924899
 md"""
@@ -132,24 +132,24 @@ md"""
 
 # ╔═╡ 298459bf-e7d0-4f74-80a4-2ded3692e132
 md"""
-# Coupled-channel model
+## Coupled-channel model
 Use simplest K-matrix (Flatte)
 
 $A = \frac{1}{m^2-s-ig^2(\rho_1(s) + r^2\rho_2(s))+\text{Re}[ig^2r^2\rho_2(m^2)]}$
 """
 
 # ╔═╡ 8084f164-d787-47f7-998d-a6f01f6ab684
-A(s,m,g,r) = g^2*ρ(m^2)/2 /
-	(m^2-s-1im*g^2*(ρ(s)+r^2*ρ′(s))/2+real(1im*g^2*r^2*ρ′(m^2+1e-7im)/2))
+A(s, m, g, r) = g^2 * ρ(m^2) / 2 /
+                (m^2 - s - 1im * g^2 * (ρ(s) + r^2 * ρ′(s)) / 2 + real(1im * g^2 * r^2 * ρ′(m^2 + 1e-7im) / 2))
 
 # ╔═╡ b6fb501c-3156-4ee2-8586-d477a0b1e52a
 begin
-	g0 = sqrt(2mΩc3065*ΓΩc3065/ρ(mΩc3065^2))
-	r0 = 0.0
+    g0 = sqrt(2mΩc3065 * ΓΩc3065 / ρ(mΩc3065^2))
+    r0 = 0.0
 end;
 
 # ╔═╡ 03ade967-d4a8-427f-99d8-dc74860ed68b
-A²(s, g=g0,r=r0) =  abs2(A(s+1e-7im,mΩc3065,g,r))
+A²(s, g=g0, r=r0) = abs2(A(s + 1e-7im, mΩc3065, g, r))
 
 # ╔═╡ bcb3efc5-0ebb-40b1-80cc-3a1708cf29a6
 md"""
@@ -158,9 +158,9 @@ md"""
 
 # ╔═╡ f16b4fe7-9f03-40d0-bd3c-003b9e6ab1ac
 let
-	plot()
-	plot!(e->M²(e2m(e)^2)*ρ(e2m(e)^2)*e2m(e), m2e(mΞc+mK), 200, lab="|M|²ρ(ΞcK)",c=1)
-	plot!(e->A²(e2m(e)^2)*ρ(e2m(e)^2)*e2m(e), m2e(mΞc+mK), 200, lab="|A₀|²ρ(ΞcK)",c=2)
+    plot()
+    plot!(e -> M²(e2m(e)^2) * ρ(e2m(e)^2) * e2m(e), m2e(mΞc + mK), 200, lab="|M|²ρ(ΞcK)", c=1)
+    plot!(e -> A²(e2m(e)^2) * ρ(e2m(e)^2) * e2m(e), m2e(mΞc + mK), 200, lab="|A₀|²ρ(ΞcK)", c=2)
 end
 
 # ╔═╡ b1b6d0fe-d510-4e07-8797-bef9481892cf
@@ -170,14 +170,14 @@ md"""
 
 # ╔═╡ d9d7364a-623a-41fc-bf06-792891d10237
 let
-	plot()
-	plot!(e->A²(e2m(e)^2)*ρ(e2m(e)^2)*e2m(e), m2e(mΞc+mK), 200, lab="|A₀|²ρ(ΞcK)",c=2)
-	plot!(e->A²(e2m(e)^2,
-			2*g0, # tuned by had to reproduce the width
-			2/g_ΞcK_over_Ξc′K # taken from branching ratio
-			)*ρ(e2m(e)^2)*e2m(e), m2e(mΞc+mK), 200, lab="|A|²ρ(ΞcK)",c=3)
-	lens!([80,120], [0,0.08], inset=(1,bbox(0.1,0.1,0.3,0.3)))
-	plot!(sp=2, xlab="")
+    plot()
+    plot!(e -> A²(e2m(e)^2) * ρ(e2m(e)^2) * e2m(e), m2e(mΞc + mK), 200, lab="|A₀|²ρ(ΞcK)", c=2)
+    plot!(e -> A²(e2m(e)^2,
+                   2 * g0, # tuned by had to reproduce the width
+                   2 / g_ΞcK_over_Ξc′K # taken from branching ratio
+               ) * ρ(e2m(e)^2) * e2m(e), m2e(mΞc + mK), 200, lab="|A|²ρ(ΞcK)", c=3)
+    lens!([80, 120], [0, 0.08], inset=(1, bbox(0.1, 0.1, 0.3, 0.3)))
+    plot!(sp=2, xlab="")
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001

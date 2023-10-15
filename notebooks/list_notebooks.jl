@@ -106,7 +106,10 @@ function extend_itemized_list(notebooks, html_string)
         index = build_index_structure(read(joinpath(@__DIR__, notebook), String))
 
         # Extract titles and subtitles from the index
-        length(index) != 1 && error("Fishy index, not `Title=>[Subs...]`\n\nindex = $(index)\n")
+        if length(index) == 0
+            index = [notebook => []]
+        end
+        length(index) != 1 && error("Fishy index, not `Title=>[Subs...] in $(notebook)`\n\nindex = $(index)\n\nlength(index) = $(length(index))")
         title = first(index[1])
         subtitles = last(index[1])
 
