@@ -1,17 +1,17 @@
-using Pkg
-Pkg.activate(joinpath(@__DIR__, ".."))
-Pkg.instantiate()
-# 
-using Pluto
 
 # make sure the script is located in the notebooks folder
 # the script assumes it is a subfolder of the project
 notebooks_dir = "notebooks"
 @assert splitpath(@__DIR__)[end] == notebooks_dir
 
+function is_pluto_notebook(path2file)
+    l = readline(path2file)
+    l == "### A Pluto.jl notebook ###"
+end
+
 files = readdir(@__DIR__)
 notebooks = filter(files) do f
-    Pluto.is_pluto_notebook(joinpath(@__DIR__, f))
+    is_pluto_notebook(joinpath(@__DIR__, f))
 end
 
 function extract_md_blocks(content::AbstractString)
