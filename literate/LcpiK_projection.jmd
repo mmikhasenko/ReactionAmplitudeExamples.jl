@@ -1,0 +1,155 @@
+---
+title: Feed-down of $\Xi_c \to \Lambda_c \pi K$ decay
+author: Misha Mikhasenko
+date: 1st Oktober 2019
+options:
+    dpi : 200
+    fig_env : "figure"
+    fig_ext : ".pdf"
+    out_width : "\\textwidth"
+---
+
+# Decay amplitude and intensity
+
+Schematic diagram for the $\Xi_c \to \Lambda_c \pi K$ transition is shown a diagram below,
+where particles are labeled $0\to 1\,2\,3$, respectively.
+![A schematic diagram for the decay dynamics.](inline-figs/OmegaBdecay_isobar_ls.pdf)
+
+The decay is considered in the three-particle rest frame, $\vec p_0 = \vec 0$.
+All momenta $p_i$, $i=1,2,3$ brought into the _aligned_ configutation
+where $\vec p_3$ points to the $-z$ direction, $\vec p_2$ is in the first quater, i.e.
+has positive projections to both $x$ and $z$ axis.
+
+<!-- $\sigma_3 = (p_1+p_2)$ is an invariant mass of $\Lambda_c\pi$ pair
+(perhaps, can be set to $m_\Sigma^2$), -->
+The decay amplitude reads,
+$$
+\begin{align}
+A_{\lambda}^{\Lambda} &= \sum_\nu\,
+  H_{\nu,0}^{\Xi_c\to \Sigma_c K} d_{\Lambda \nu}^{J}(0)\,
+  H_{\lambda,0}^{\Sigma_c\to \Lambda_c \pi} d_{\nu \lambda}^{S}(\theta)\\
+  &=
+    H_{\Lambda,0}^{\Xi_c\to \Sigma_c K}\,
+    d_{\Lambda \lambda}^{S}(\theta)\,
+    H_{\lambda,0}^{\Sigma_c\to \Lambda_c \pi},
+\end{align}
+$$
+where $\theta$ is an angle of $\Lambda_c$
+in the $\Lambda_c\pi$ rest frame obtained from the aligned frame
+by boosting all particle momenta to the left along $z$ axis.
+The amplitude is written in the form of a contraction of two binory decays
+for each of which there is a coupling $H$ and Wigner $d$-function.
+The polar angle in the first transition is $0$ due to our choice of the
+aligned coordinate system.
+
+To obey the parity conservation, the helicity couplings $H$ are expressed
+via the $LS$-couplings,
+$$
+\begin{align}
+  H_{\nu,0}^{\Xi_c\to \Sigma_c K} & = \sum_L \langle L, 0; S,\nu | J,\nu \rangle  H_{L}^{\Xi_c\to \Sigma_c K},\\ \nonumber
+  H_{\lambda,0}^{\Sigma_c\to \Lambda_c \pi} & = \langle 1, 0; \frac{1}{2},\lambda | S,\lambda \rangle H_P^{\Sigma_c\to \Lambda_c \pi},
+\end{align}
+$$
+where the orbital angular momentum in the decay $\Sigma_c\to \Lambda_c \pi$ is set to $1$ ($P$-wave),
+which is true for both $\Sigma_c(2455)$ with $J^P=\frac{1}{2}^+$ and $\Sigma_c(2520)$ with $J^P=\frac{3}{2}^+$.
+
+Event distribution is proportional to the squared matrix element summed over the initial and final helicities.
+It can be calculated for every hypothesis of quantum numbers $J$, $L$, and $S$.
+$$
+  \begin{align}
+    I^{JLS}(\cos\theta) = N \sum_{\Lambda=-S}^{S}
+    \sum_{\lambda=-1/2}^{1/2}
+    \left|
+    \langle L, 0; S,\Lambda | J,\Lambda \rangle\,
+    d_{\Lambda \lambda}^{S}(\theta)\,
+    \langle 1, 0; \frac{1}{2},\lambda | S,\lambda \rangle
+    \right|^2,
+  \end{align}
+$$
+where irrelevant numerical constants are absorbed in $N$.
+
+<!-- It turns out that the angular distribution does not depend on $J$ and $L$
+and entirely determined by $S$.
+$$
+I^{S=1/2}(\cos\theta) \sim \mathrm{const}, \qquad
+I^{S=3/2}(\cos\theta) \sim \sin^2(\theta)
+$$ -->
+
+# Numerical evaluation of the expressions
+
+Here is a quick implementation using __Julia__ language,
+```julia; results="hidden"
+using SymPy
+# python library for Clebsch-Gordan
+import PyCall
+PyCall.pyimport_conda("sympy.physics.wigner", "sympy")
+import_from(sympy.physics.quantum.spin, (:WignerD,), typ=:Any)
+# python library for Wigner d
+PyCall.pyimport_conda("sympy.physics.quantum.spin", "sympy")
+import_from(sympy.physics.wigner)
+#
+@vars θ real=true
+@vars cosθ real=true
+# short cuts
+const hf = Sym(1)/2
+const n = Sym(1)
+```
+
+__Angular part of the amplitude is following.__
+```julia; results="hidden"
+function amplitude(J,L,Λ,λ,S=1hf)
+    return simplify(
+        clebsch_gordan(L,S,J,0,Λ,Λ) *
+        clebsch_gordan(1n,hf,S,0,λ,λ) * # P-wave
+        WignerD(S,Λ,λ,0,θ,0).doit())
+end
+#
+intensity(J,L,S=1hf) = simplify(sum(abs2(amplitude(J,L,Λ,λ,S)) for Λ=-S:1:S, λ=[-hf,hf]))
+```
+
+__Explicit expressions for several $JLS$:__
+```julia
+# 1/2
+for J in [hf, 3hf, 5hf]
+  for L in [J+hf, J-hf]
+    println("Intensity(J=$J,L=$L,S=1/2) = ",intensity(J, L, hf))
+  end
+end
+# 3/2
+for J = [hf, 3hf, 5hf]
+  for L in abs(J-3hf):(J+3hf)
+    println("Intensity(J=$J,L=$L,S=3/2) = ",intensity(J, L, 3hf))
+  end
+end
+```
+__Plot of intensity function for different $J$ and $L$ while $S=3/2$:__
+```julia; results="hidden"; echo=false
+import PyCall
+import PyPlot: matplotlib
+PyCall.PyDict(matplotlib["rcParams"])["font.family"] = "serif:bold"
+# PyCall.PyDict(matplotlib["rcParams"])["font.weight"] = "bold"
+PyCall.PyDict(matplotlib["rcParams"])["font.serif"] = "Helvetica" #"STIX"
+PyCall.PyDict(matplotlib["rcParams"])["mathtext.fontset"] = "dejavusans"#"Helvetica"
+PyCall.PyDict(matplotlib["rcParams"])["text.usetex"] = true
+```
+```julia
+using Plots
+using LaTeXStrings
+pyplot()
+#
+plot(size=(750,200), layout=grid(1,3), frame=:origin,
+  ylim=(0,1), xlab=L"\cos(\theta)", leg=:topright)
+for (iJ,J) = enumerate([hf, 3hf, 5hf]) # hf,
+  plot!(sp=iJ, title="J=$J, S=3/2")
+  for L in abs(J-3hf):(J+3hf)
+    exp = intensity(J, L, 3hf).subs(θ,acos(cosθ))
+    exp += 1e-10*cosθ # add dependence even if the function is constant
+    #
+    xv = range(-1,stop=1,length=100) # plotting range
+    calv = exp.(xv) # evaluation of the function
+    plot!(sp=iJ, xv, calv ./ sum(calv) * (length(calv) / (1+1)), # normalized to 1
+      norm=true, lab="L=$L")
+  end
+end
+plot!()
+```

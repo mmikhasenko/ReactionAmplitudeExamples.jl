@@ -1,0 +1,167 @@
+---
+title: Correlated $\chi^2$ for the spin-density matrix fit
+author: Misha Mikhasenko
+date: 24th November 2019
+options:
+    dpi : 200
+    fig_env : "figure"
+    fig_ext : ".pdf"
+    out_width : "0.5\\textwidth"
+---
+
+# Statement of the problem
+
+There are $n$ correlated complex quantities (fit parameters for the partial-wave amplitudes)
+with a known correlation matrix $C_{ij}$ given in term of the absolute values squared and phasese.
+
+The residual-squared function, $R^2$ calculated as follows
+$$
+\begin{align}
+R^2 &= \sum_{i}\frac{(I_i-\hat{I}_i)}{\sigma_I^2}\\ \nonumber
+    &\quad +\sum_{i>j}\frac{(\text{Re}\,I_{ij}-\text{Re}\,\hat{I}_{ij})}{\sigma_{\text{Re}\,I}^2}\\ \nonumber
+    &\quad +\sum_{i>j}\frac{(\text{Im}\,I_{ij}-\text{Im}\,\hat{I}_{ij})}{\sigma_{\text{Im}\,I}^2},
+\end{align}
+$$
+where the hat-quantities are the true values, $I_i = |c_i^2|$, $I_{ij} = c_i^* c_j$.
+It is required to estimate the distribution of the $R^2$ function.
+
+# Numerical implementation
+
+The number of parameters is denoted by $N_q$. Hence, the corrlation matrix has dimesion $2N_q+1$
+with the first $N_q$ elements showing the correlation of intensities, and the second $N_q-1$ being
+the phases of $c_i$, with $i>1$ with respect to the $c_1$.
+
+```julia; results="hidden"
+using LinearAlgebra
+using Statistics
+using Plots
+#
+const Nq = 5 # number of complex quantities
+const Np = 2Nq-1 # number of parameters
+#
+# here are the amplitudes
+const cs0 = 3.0 .* rand(Complex{Float64},Nq); cs0[1] = abs(cs0[1])
+#
+# Conversion from complex numbers to parameters and back
+arg(z) = atan(imag(z), real(z))
+ps_of_cs(cs) = vcat(abs.(cs), arg.(cs[2:end]))
+cs_of_ps(ps) = ps[1:Nq] .* cis.([0, ps[(Nq+1):end]...])
+```
+
+<!-- ```julia
+# correlations
+const c_cor = 0.5
+const phi_cor = 0.7
+const cphi_cor = 0.3
+ℂ = Matrix{Float64}(I,(2Nq-1,2Nq-1))
+for i=1:(2Nq-1), j=(i+1):(2Nq-1)
+     mn = (i ≤ Nq && j ≤ Nq) ? c_cor : ((i > Nq && j > Nq) ? phi_cor : cphi_cor)
+     ℂ[i,j] = randn()*mn
+     ℂ[i,j] > 1 && (ℂ[i,j] = 0.9) # the correlation should not be bigger than 1
+     ℂ[j,i] = ℂ[i,j]
+end
+``` -->
+
+Here is a generation of a random correlation matrix.
+```julia
+const σcor = 0.9
+#
+ℂ = Matrix(Symmetric(randn(Np,Np).*σcor))
+[ℂ[i,i] = 1.0 for i=1:Np]
+# make positive defined
+ℂ = let
+    𝕃 = eigvals(ℂ); 𝕊 = eigvecs(ℂ)
+    𝕊 * Diagonal(abs.(𝕃)) * inv(𝕊)
+end
+ℂ = ℂ ./ sqrt.(diag(ℂ)) ./ transpose(sqrt.(diag(ℂ)))
+heatmap(ℂ, c=:balance, size=(500,450))
+eigvals(ℂ)
+```
+
+Covariance matrix need uncertainties:
+```julia
+const σs = 0.3 .* rand(Nq) # uncertainties of the absolute values
+const ϕs = (0.01*(2π)) .* rand(Nq-1) # uncertainties of phases
+const σϕs = [σs..., ϕs...] # vector of parametes
+#
+const 𝕍 = ℂ .* sqrt.(σϕs) .* transpose(sqrt.(σϕs)) # covariannce matrix
+```
+
+The variables according to covariance matrix are generated using eigenvalue decomposition,
+```julia
+const 𝕃 = eigvals(𝕍)
+const 𝕊 = eigvecs(𝕍)
+#
+rand_ps() = 𝕊 * (sqrt.(𝕃).* randn(Np)) # random parametes
+plot(layout=grid(2,1), size=(500,900),
+    heatmap(𝕍),
+    heatmap(cov([rand_ps() for _ in 1:100000])))
+#
+plot(1:Np, [ps_of_cs(cs0) mean([ps_of_cs(rand_cs()) for _=1:100])], lab=["true" "mean"])
+```
+
+Here is a generator of the random complex number,
+```julia
+function rand_cs()
+    ps_rand = rand_ps()
+    ps0 = ps_of_cs(cs0)
+    return cs_of_ps(ps0+ps_rand)
+end
+let
+    plot()
+    [scatter!([rand_cs()[q] for _=1:1000]) for q in 1:Nq]
+    plot!()
+end
+```
+
+```julia
+const rsample = [rand_cs() for _=1:100000]
+Iij(cs) = cs' .* cs
+fs = [[x->real(Iij(x)[i,i]) for i in 1:Nq for j in i:Nq]...,
+      [x->imag(Iij(x)[i,j]) for i in 1:Nq for j in 1:(i-1)]...]
+mfs = [real(mean(f.(rsample))) for f in fs]
+σfssq = [real(cov(f.(rsample))) for f in fs]
+mfs0 = [f(cs0) for f in fs]
+#
+let i=1, j=17
+    scatter(fs[i].(rsample[1:1000]), fs[j].(rsample[1:1000]), lab="corr")
+    scatter!(mfs[i].+sqrt(σfssq[i]).*randn(1000),
+             mfs[j].+sqrt(σfssq[j]).*randn(1000), lab="uncorr")
+end
+```
+
+Finally, $R^2$ distribution:
+```julia
+R(cs) = sum((f(cs) - mfs[i])^2/σfssq[i] for (i,f) in enumerate(fs))
+R0(cs) = sum((f(cs) - mfs0[i])^2/σfssq[i] for (i,f) in enumerate(fs))
+#
+Rsample = R.(rsample)
+#
+using Distributions
+d25 = Chisq(25)
+d9 = Chisq(9)
+
+let bins=range(0,80,length=40)
+    stephist(Rsample, bins=bins, norm=true, lab="R2 distr (m=$(round(mean(Rsample), digits=1)))")
+    stephist!(rand(d9,10000), bins=bins, norm=true, lab="chi2(9) distr")
+    stephist!(rand(d25,10000), bins=bins, norm=true, lab="chi2(25) distr")
+end
+```
+
+As a cross check, we can validate that when residual disctribution for
+the parameters matches expected chi2
+```julia
+chi2_corr(Δ) = transpose(Δ) * inv(𝕍) * Δ
+chi2_nocorr(Δ) = transpose(Δ) * inv(Diagonal(diag(𝕍))) * Δ
+
+χsample = [chi2_corr(rand_ps()) for _ in 1:10000]
+χsample_nocorr = [chi2_nocorr(rand_ps()) for _ in 1:10000]
+
+let bins=range(0,80,length=40)
+    plot(size=(500,350))
+    stephist!(χsample, bins=bins, norm=true, lab="chi2 distr (m=$(round(mean(χsample), digits=1)))", lw=2)
+    stephist!(rand(d9,10000), bins=bins, norm=true, lab="chi2(9) distr")
+    stephist!(rand(d25,10000), bins=bins, norm=true, lab="chi2(25) distr")
+    stephist!(χsample_nocorr, bins=bins, l=(:dash), norm=true, lab="chi2 nocorr distr (m=$(round(mean(χsample_nocorr), digits=1)))")
+end
+```
