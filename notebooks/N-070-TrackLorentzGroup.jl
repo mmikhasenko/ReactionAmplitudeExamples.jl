@@ -192,7 +192,7 @@ end
 
 # ╔═╡ 68587656-5eb4-4c68-ac92-f214f216de22
 md"""
-# Test: decoding matrix composition
+## Test: decoding matrix composition
 """
 
 # ╔═╡ 84fa9b29-e748-4b16-a860-b9701d8c4a1c
