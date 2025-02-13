@@ -35,6 +35,11 @@ begin
 	using PlutoUI
 end
 
+# ╔═╡ 7c7e3cbe-faef-44de-8644-133914b8a9ea
+md"""
+# Unitarized background
+"""
+
 # ╔═╡ ddfc8f61-e540-4db6-8ee6-e5cce754066f
 theme(:boxed)
 
@@ -137,6 +142,7 @@ end
   ╠═╡ =#
 
 # ╔═╡ Cell order:
+# ╟─7c7e3cbe-faef-44de-8644-133914b8a9ea
 # ╠═1c6e06ae-5747-11ec-0f31-9347d77fe04b
 # ╠═ddfc8f61-e540-4db6-8ee6-e5cce754066f
 # ╠═18663f9a-5d04-4530-84e7-cadf474643da
