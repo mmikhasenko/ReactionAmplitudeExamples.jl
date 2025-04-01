@@ -46,6 +46,13 @@ The model also assumes:
 1. Decay rate of $B^0 \to \psi(4260)\,\pi^+ K^-$ is significant (much larger that $B^0 \to \psi\,\pi^+ K^-$)
 2. Coupled-channel between $\psi\,\pi^+$ and $\psi(4260)\,\pi^+$ is significant
 
+### References for the triangle calculations:
+
+- A book by Gribov [inspire:2180771](https://inspirehep.net/literature/2180771)
+- Nature of a1(1420) [inspire:1341619](https://inspirehep.net/literature/1341619)
+- Triangle Pentaquarks [inspire:1384521](https://inspirehep.net/literature/1384521)
+- Narrow Pc (LHCb) [inspire:1728691](https://inspirehep.net/literature/1728691)
+
 """
 
 # ╔═╡ a77fe681-4037-424c-ad21-d32e82f88b67
