@@ -35,6 +35,15 @@ begin
 	using PlutoUI
 end
 
+# ╔═╡ c9b900a0-07f1-421a-a6c3-dee884d86786
+md"""
+# Construction of K-matrix
+
+In this notebook we build a production amplitude using `ScatteringKMatrix` package.
+It demonstrate the computations are fast enough for live-time demos.
+
+"""
+
 # ╔═╡ 710bd318-025c-4761-bc8b-51c07d1dd40a
 theme(:boxed)
 
@@ -104,6 +113,7 @@ begin
 end
 
 # ╔═╡ Cell order:
+# ╟─c9b900a0-07f1-421a-a6c3-dee884d86786
 # ╠═b077d8ea-1620-11f0-2d73-ad9dda501211
 # ╠═710bd318-025c-4761-bc8b-51c07d1dd40a
 # ╠═f713eddb-035b-4f97-8f37-db147ad111fd
