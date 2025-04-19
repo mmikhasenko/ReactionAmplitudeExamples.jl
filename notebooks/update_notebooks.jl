@@ -33,13 +33,13 @@ for name in notebooks
     try
         notebook_path = joinpath(@__DIR__, name)
         @debug "Full path: $notebook_path"
-        
+
         if !isfile(notebook_path)
             throw(ErrorException("Notebook file not found"))
         end
-        
+
         Pluto.activate_notebook_environment(notebook_path)
-        
+
         # Check and upgrade manifest if needed
         ctx = Pkg.API.Context()
         if ctx.env.manifest.manifest_format != v"2.0.0"
@@ -47,14 +47,14 @@ for name in notebooks
             Pkg.upgrade_manifest()
             Pkg.resolve()
         end
-        
+
         # Update packages
         Pkg.update()
         push!(successful_updates, name)
-        
+
     catch e
-        @error "Failed to process notebook $name" exception=(e, catch_backtrace())
-        failed_notebooks[name] = (error=e, trace=catch_backtrace())
+        @error "Failed to process notebook $name" exception = (e, catch_backtrace())
+        failed_notebooks[name] = (error = e, trace = catch_backtrace())
     end
 end
 
@@ -68,12 +68,12 @@ Returns a tuple of (success::Bool, compat::Vector{String}, error::Union{Nothing,
 function getcompat(file)
     compat = String[]
     start_fill = false
-    
+
     try
         if !isfile(file)
             return (false, String[], ErrorException("File not found: $file"))
         end
-        
+
         for line in eachline(file)
             if line == "[compat]"
                 start_fill = true
@@ -105,26 +105,26 @@ function parse_version_line(line)
         if isempty(line) || startswith(line, "#")
             return nothing
         end
-        
+
         # Split on equals sign and clean up parts
-        parts = split(line, "=", limit=2)
+        parts = split(line, "=", limit = 2)
         if length(parts) != 2
             return nothing
         end
-        
+
         pkg_name = strip(parts[1])
         # Clean up the version string
         version = strip(replace(replace(parts[2], "\"" => ""), "~" => ""))
-        
+
         return (pkg_name, version)
     catch e
-        @warn "Failed to parse version line: $line" exception=e
+        @warn "Failed to parse version line: $line" exception = e
         return nothing
     end
 end
 
 # Collect compatibility information with error tracking
-compats = Dict{String,Tuple{Vector{String},Union{Nothing,Exception}}}()
+compats = Dict{String, Tuple{Vector{String}, Union{Nothing, Exception}}}()
 for notebook in notebooks
     path = joinpath(@__DIR__, notebook)
     success, compat_lines, error = getcompat(path)
@@ -152,39 +152,39 @@ end
 # Enhanced package version statistics
 let
     println("\n=== Package Version Statistics ===")
-    
+
     # Create a dictionary to store package versions by package name
     package_versions = Dict{String, Dict{String, Set{String}}}()
-    
+
     # Collect all versions for each package
     for (notebook, (compat_lines, error)) in compats
         if !isnothing(error)
             continue
         end
-        
+
         for line in compat_lines
             parsed = parse_version_line(line)
             isnothing(parsed) && continue
-            
+
             pkg_name, version = parsed
             if !haskey(package_versions, pkg_name)
                 package_versions[pkg_name] = Dict{String, Set{String}}()
             end
-            
+
             # Get major version
             major = try
                 split(version, ".")[1]
             catch
                 "unknown"
             end
-            
+
             if !haskey(package_versions[pkg_name], major)
                 package_versions[pkg_name][major] = Set{String}()
             end
             push!(package_versions[pkg_name][major], notebook)
         end
     end
-    
+
     # Print package statistics
     if isempty(package_versions)
         println("No package version information found in any notebook.")
