@@ -7,13 +7,13 @@ using InteractiveUtils
 # ╔═╡ 90c57cae-40c5-11ed-3374-45e9dd35d5de
 # ╠═╡ show_logs = false
 begin
-    import Pkg
+    using Pkg: Pkg
     Pkg.add(
         [Pkg.PackageSpec(
-            url="https://github.com/mmikhasenko/EffectiveRangeExpansion.jl"),
+            url = "https://github.com/mmikhasenko/EffectiveRangeExpansion.jl"),
         Pkg.PackageSpec("QuadGK"),
         Pkg.PackageSpec("Plots")])
-
+    # 
     using EffectiveRangeExpansion
     using QuadGK
     using Plots
@@ -69,7 +69,7 @@ begin
 end
 
 # ╔═╡ 934ce5cc-6033-48a6-89ce-5b576acc9de1
-heatmap(-0.1:0.01:3, -1:0.01:1, (x, y) -> arg(1im * ρ(x + 1im * y)), c=:twilight)
+heatmap(-0.1:0.01:3, -1:0.01:1, (x, y) -> arg(1im * ρ(x + 1im * y)), c = :twilight)
 
 # ╔═╡ 72a252a4-ba7d-42ad-b730-262aab8d0cd7
 md"""
@@ -101,13 +101,13 @@ It is a cut starting from the threshold stright to the right along the real axis
 """
 
 # ╔═╡ 7b820569-580e-4ae5-8c58-60a72fdd1711
-heatmap(-0.1:0.01:3, -1:0.01:1, (x, y) -> arg(C(x + 1im * y)), c=:twilight)
+heatmap(-0.1:0.01:3, -1:0.01:1, (x, y) -> arg(C(x + 1im * y)), c = :twilight)
 
 # ╔═╡ 74be6176-f715-414f-a1d8-d5a954ae4825
 begin
-    plot(grid=false, frame=:box, xlabel="√s", ylab="Amplitude")
-    plot!(e -> imag(C(e)), 1, 3, l=:red, lab="Im")
-    plot!(e -> real(C(e)), 1, 3, l=:black, lab="Re")
+    plot(grid = false, frame = :box, xlabel = "√s", ylab = "Amplitude")
+    plot!(e -> imag(C(e)), 1, 3, l = :red, lab = "Im")
+    plot!(e -> real(C(e)), 1, 3, l = :black, lab = "Re")
 end
 
 # ╔═╡ a143f531-4c00-4464-89cf-619fc1ad4e14

@@ -6,14 +6,8 @@ using InteractiveUtils
 
 # ╔═╡ 683556a0-c495-11ec-1724-85835878175b
 begin
-    import Pkg
-    Pkg.activate(mktempdir())
-    # 
-    Pkg.add([
-        Pkg.PackageSpec("Corpuscles"),
-        Pkg.PackageSpec(url="https://github.com/mmikhasenko/ThreeBodyDecay.jl")
-    ])
-    using ThreeBodyDecay
+    using Corpuscles
+    using ThreeBodyDecays
     using Corpuscles
     using Corpuscles.Unitful
 end
@@ -34,7 +28,7 @@ begin
 end;
 
 # ╔═╡ fce3386c-7e11-4690-8599-437d1ff5e280
-const ms = ThreeBodyMasses(mΛc, mπ, mπ; m0=mΛcˣˣ)
+const ms = ThreeBodyMasses(mΛc, mπ, mπ; m0 = mΛcˣˣ)
 
 # ╔═╡ 7c107c24-271c-447b-a15c-fb40544d3988
 σs0 = randomPoint(ms)

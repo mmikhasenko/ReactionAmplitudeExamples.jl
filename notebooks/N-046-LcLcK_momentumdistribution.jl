@@ -7,16 +7,7 @@ using InteractiveUtils
 # ╔═╡ 1125f9e0-d4ea-11ec-169b-d754f5700778
 # ╠═╡ show_logs = false
 begin
-    using Pkg
-    Pkg.activate(mktempdir())
-    Pkg.add([
-        Pkg.PackageSpec(url="https://github.com/mmikhasenko/ThreeBodyDecay.jl"),
-        Pkg.PackageSpec("Plots"),
-        Pkg.PackageSpec("LaTeXStrings"),
-        Pkg.PackageSpec("QuadGK")
-    ])
-    # 
-    using ThreeBodyDecay
+    using ThreeBodyDecays
     using Plots
     using LaTeXStrings
     using QuadGK
@@ -28,10 +19,10 @@ md"""
 """
 
 # ╔═╡ 8b888bf9-7a8f-45e8-b268-41e9fdd8901e
-theme(:wong2, frame=:box, grid=false, minorticks=true,
-    guidefontvalign=:top, guidefonthalign=:right,
-    xlim=(:auto, :auto), ylim=(:auto, :auto),
-    lw=1.2, lab="", colorbar=false)
+theme(:wong2, frame = :box, grid = false, minorticks = true,
+    guidefontvalign = :top, guidefonthalign = :right,
+    xlim = (:auto, :auto), ylim = (:auto, :auto),
+    lw = 1.2, lab = "", colorbar = false)
 
 # ╔═╡ f9e829e0-6b08-403d-ba18-697ac51edfad
 begin
@@ -41,7 +32,7 @@ begin
 end;
 
 # ╔═╡ adfc0267-f6e6-412d-80db-3ee0c73bc32b
-ms = ThreeBodyMasses(mΛc, mΛc, mK; m0=mB)
+ms = ThreeBodyMasses(mΛc, mΛc, mK; m0 = mB)
 
 # ╔═╡ 0f28d98f-b7ec-4f98-abd7-017b5b5e4641
 function project1(f, σ1, ms)
@@ -62,10 +53,10 @@ function project3(f, σ3, ms)
 end
 
 # ╔═╡ a802e131-2c78-4c3f-9d9f-49aa45f261ac
-plot(border12(ms), lc=:black, aspectratio=1,
-    title="the phase space",
-    xlab=L"m^2(\Lambda_c^+ K^+)\,\,(\mathrm{MeV})",
-    ylab=L"m^2(\overline{\Lambda}_c^- K^+)\,\,(\mathrm{MeV})")
+plot(border12(ms), lc = :black, aspectratio = 1,
+    title = "the phase space",
+    xlab = L"m^2(\Lambda_c^+ K^+)\,\,(\mathrm{MeV})",
+    ylab = L"m^2(\overline{\Lambda}_c^- K^+)\,\,(\mathrm{MeV})")
 
 # ╔═╡ bebec78c-ccd6-4336-9a05-67bb8f2a985c
 md"""
@@ -85,14 +76,14 @@ md"""
 """
 
 # ╔═╡ 445d81f9-d336-40a6-9df2-425b6806255d
-phsp = flatDalitzPlotSample(ms; Nev=1_000_000);
+phsp = flatDalitzPlotSample(ms; Nev = 1_000_000);
 
 # ╔═╡ 0b66d08d-520b-4110-8850-e6091f04e3a1
 let
     xv = pKofσ.(getproperty.(phsp, :σ3))
     stephist(xv,
-        xlab=L"P_{B\,\,\mathrm{rest}}(K)\,\,(\mathrm{MeV})",
-        title=latexstring("phase space distribution of \$P_{B\\,\\,\\mathrm{ rest}}(K)\$"))
+        xlab = L"P_{B\,\,\mathrm{rest}}(K)\,\,(\mathrm{MeV})",
+        title = latexstring("phase space distribution of \$P_{B\\,\\,\\mathrm{ rest}}(K)\$"))
 end
 
 # ╔═╡ 4d7a45c0-4b77-4c48-8815-5aeca22bf4e5
@@ -115,13 +106,13 @@ md"""
 """
 
 # ╔═╡ 249d37cd-6abf-4f84-91c2-307b4f7441a8
-ϵP(p; σ=50e-3) = 1 / (1 + exp(-p / σ));
+ϵP(p; σ = 50e-3) = 1 / (1 + exp(-p / σ));
 
 # ╔═╡ b42b89f8-7c7a-4de0-9914-a6dd95d2735f
 begin
     plot(ϵP, 0, pKmax,
-        ylab=L"\varepsilon",
-        xlab=L"P_{B\,\,\mathrm{rest}}(K)\,\,(\mathrm{MeV})")
+        ylab = L"\varepsilon",
+        xlab = L"P_{B\,\,\mathrm{rest}}(K)\,\,(\mathrm{MeV})")
     savefig("assumed_e_pK.pdf")
     plot!()
 end
@@ -131,10 +122,10 @@ end
 
 # ╔═╡ b2066aab-7281-4a61-9fd1-b7862eea9fa4
 let
-    plot(ϵ, ms, clim=(0, 1), aspectratio=1,
-        title="\$p_K\$ related (in)efficiency",
-        xlab=L"m(\Lambda_c^+ K^+)\,\,(\mathrm{MeV})",
-        ylab=L"m(\overline{\Lambda}_c^- K^+)\,\,(\mathrm{MeV})")
+    plot(ϵ, ms, clim = (0, 1), aspectratio = 1,
+        title = "\$p_K\$ related (in)efficiency",
+        xlab = L"m(\Lambda_c^+ K^+)\,\,(\mathrm{MeV})",
+        ylab = L"m(\overline{\Lambda}_c^- K^+)\,\,(\mathrm{MeV})")
     savefig("e_on_dalitz.pdf")
     plot!()
 end
@@ -142,9 +133,9 @@ end
 # ╔═╡ 61132c50-1336-4694-8182-e6ca68e8ade6
 let
     plot(e1 -> project1(ϵ, e1^2, ms) / project1(σs -> 1.0, e1^2, ms),
-        sqrt.(lims1(ms))..., ylim=(0, 1),
-        xlab=L"m(\overline{\Lambda}_c^- K^+)\,\,(\mathrm{MeV})",
-        ylab=L"\epsilon_\mathrm{ph.sp.}")
+        sqrt.(lims1(ms))..., ylim = (0, 1),
+        xlab = L"m(\overline{\Lambda}_c^- K^+)\,\,(\mathrm{MeV})",
+        ylab = L"\epsilon_\mathrm{ph.sp.}")
     savefig("projected1_e.pdf")
     plot!()
 end

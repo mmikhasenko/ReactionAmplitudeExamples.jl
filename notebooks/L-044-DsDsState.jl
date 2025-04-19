@@ -6,11 +6,11 @@ using InteractiveUtils
 
 # ╔═╡ 3c395aaa-0660-4d61-bac2-aff30fe8768b
 begin
-    import Pkg
+    using Pkg: Pkg
     Pkg.activate(mktempdir())
     # 
     Pkg.add([
-        Pkg.PackageSpec(url="https://github.com/mmikhasenko/EffectiveRangeExpansion.jl"),
+        Pkg.PackageSpec(url = "https://github.com/mmikhasenko/EffectiveRangeExpansion.jl"),
         Pkg.PackageSpec("Measurements"),
         Pkg.PackageSpec("Plots"),
         Pkg.PackageSpec("Parameters"),
@@ -26,10 +26,10 @@ begin
 end;
 
 # ╔═╡ b2775c19-294a-45e4-a106-3bb41e32c8ea
-theme(:wong2, frame=:box, grid=false, minorticks=true,
-    guidefontvalign=:top, guidefonthalign=:right,
-    xlim=(:auto, :auto), ylim=(:auto, :auto),
-    lw=1.2, lab="", colorbar=false)
+theme(:wong2, frame = :box, grid = false, minorticks = true,
+    guidefontvalign = :top, guidefonthalign = :right,
+    xlim = (:auto, :auto), ylim = (:auto, :auto),
+    lw = 1.2, lab = "", colorbar = false)
 
 # ╔═╡ c4f58fe6-b4c6-4e51-80d6-9dc7e2f145ca
 begin
@@ -82,10 +82,10 @@ p0 = (M0_fit.val, g1_fit.val, g_fit2.val) |> NamedTuple{(:M0, :g1, :g2)}
 
 # ╔═╡ f3456168-ebcf-4ebf-b343-c40e333e2071
 begin
-    plot(layout=grid(2, 1, heights=(0.95, 0.05)), link=:x)
-    plot!(e -> intensity(e; p=p0), 0, 200, xlab="Δm (MeV)", title="intensity spectrum")
-    plot!(sp=2, yaxis=nothing, frame=:axes, xlab="m (GeV)",
-        xticks=(0:50:200, round.(e2m.(0:50:200); digits=2)))
+    plot(layout = grid(2, 1, heights = (0.95, 0.05)), link = :x)
+    plot!(e -> intensity(e; p = p0), 0, 200, xlab = "Δm (MeV)", title = "intensity spectrum")
+    plot!(sp = 2, yaxis = nothing, frame = :axes, xlab = "m (GeV)",
+        xticks = (0:50:200, round.(e2m.(0:50:200); digits = 2)))
 end
 
 # ╔═╡ ed447ad4-6207-4184-bc1e-22cd6a774af5
@@ -95,7 +95,7 @@ md"""
 
 # ╔═╡ 367607a5-2dcd-4851-8f3c-b2a3e29eb69e
 begin
-    targetf(Δe) = D(e2m(Δe); p=p0)
+    targetf(Δe) = D(e2m(Δe); p = p0)
     k(Δe) = ρ1(e2m(Δe)) * e2m(Δe) / 2
 end
 
@@ -116,8 +116,8 @@ md"""
 # ╔═╡ caa3c578-15b7-4424-a73a-9484b2bd5403
 Corr = Symmetric(
     [1.0 0.95089658 -0.93626351
-        0.95089658 1.0 -0.97610506
-        -0.93626351 -0.97610506 1.0])
+           0.95089658 1.0 -0.97610506
+           -0.93626351 -0.97610506 1.0])
 
 # ╔═╡ 933005c9-c2a6-45e1-a911-78213f4ab910
 DG = begin
@@ -128,17 +128,17 @@ DG = begin
 end;
 
 # ╔═╡ 68d717fa-dbe2-40c4-a8cd-b9ddd7c685fc
-pv = mapslices(rand(DG, 10_000); dims=1) do v
+pv = mapslices(rand(DG, 10_000); dims = 1) do v
     NamedTuple{(:M0, :g1, :g2)}(v)
 end[1, :];
 
 # ╔═╡ a9c6881c-0890-465f-86f0-72dfac64f16a
 let
-    plot(title="Intensity", xlab="Δm (MeV)")
+    plot(title = "Intensity", xlab = "Δm (MeV)")
     for p in pv[1:100:end]
         xv = range(-20, 100, 300)
         yv = intensity.(xv; p)
-        plot!(xv, yv ./ sum(yv), lc=1, lw=0.3)
+        plot!(xv, yv ./ sum(yv), lc = 1, lw = 0.3)
     end
     plot!()
 end
@@ -148,23 +148,23 @@ erpv = [effectiverangeexpansion(Δe -> D(e2m(Δe); p), k, ere_method) for p in p
 
 # ╔═╡ 283f5839-9fd3-45e8-8927-0e54e3cd0cbf
 begin
-    scatter(title="scattering parameters", xlab="ℜ a⁻¹ (MeV)", ylab="ℜ r (MeV)",
+    scatter(title = "scattering parameters", xlab = "ℜ a⁻¹ (MeV)", ylab = "ℜ r (MeV)",
         real.(getproperty.(erpv, :a⁻¹)),
         real.(getproperty.(erpv, :r)),
-        xlim=(-0.3, 0.3), ylim=(-10, 10), ms=1)
-    hline!([0.0], lab="", lc=1)
-    vline!([0.0], lab="", lc=1)
+        xlim = (-0.3, 0.3), ylim = (-10, 10), ms = 1)
+    hline!([0.0], lab = "", lc = 1)
+    vline!([0.0], lab = "", lc = 1)
 end
 
 # ╔═╡ eb63fd94-da91-43fa-a3df-4f20e1224ba7
-BW3915(e; p=(m=3.919, Γ=13e-3)) = 1 / (p.m^2 - e^2 - 1im * p.m * p.Γ)
+BW3915(e; p = (m = 3.919, Γ = 13e-3)) = 1 / (p.m^2 - e^2 - 1im * p.m * p.Γ)
 
 # ╔═╡ ce219e0c-7248-4c70-bb19-82645a2214fa
 begin
-    plot(layout=grid(2, 1, heights=(0.95, 0.05)), link=:x)
-    plot!(e -> abs2(BW3915(e2m(e))) * ρ1(e2m(e)) * e2m(e), 0, 200, xlab="Δm (MeV)", title="intensity spectrum")
-    plot!(sp=2, yaxis=nothing, frame=:axes, xlab="m (GeV)",
-        xticks=(0:50:200, round.(e2m.(0:50:200); digits=2)))
+    plot(layout = grid(2, 1, heights = (0.95, 0.05)), link = :x)
+    plot!(e -> abs2(BW3915(e2m(e))) * ρ1(e2m(e)) * e2m(e), 0, 200, xlab = "Δm (MeV)", title = "intensity spectrum")
+    plot!(sp = 2, yaxis = nothing, frame = :axes, xlab = "m (GeV)",
+        xticks = (0:50:200, round.(e2m.(0:50:200); digits = 2)))
 end
 
 # ╔═╡ Cell order:
