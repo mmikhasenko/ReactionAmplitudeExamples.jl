@@ -27,4 +27,3 @@ let
         ylab=L"|\mathrm{BW}_{K_{0}}|^2\Phi_{K\eta}(s)",
         title=L"K_{0}(1430)\to K\,\eta(958)\,\,S\!-\!\mathrm{wave}")
 end
-savefig("K02Ketap_v2.pdf")

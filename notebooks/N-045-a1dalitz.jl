@@ -50,7 +50,6 @@ begin
     # 
     plot!(border12(ms), l = (4, :black), lab = "", aspectratio = 1)
     #
-    savefig("a1dalitzplotwithrho_schematic.pdf")
     plot!()
 end
 
@@ -73,9 +72,6 @@ end
 begin
     plot(σs -> abs2(BW(σs[1]) + BW(σs[2])), ms, aspectratio = 1)
     plot!(border12(ms), l = (4, :black), lab = "", aspectratio = 1)
-    # 
-    savefig("a1dalitzplotwithrho_scalar.pdf")
-    plot!()
 end
 
 # ╔═╡ c5ed4542-a60a-4d7e-bb57-ce9653ebfd6f

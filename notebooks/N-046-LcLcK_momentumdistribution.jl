@@ -113,7 +113,6 @@ begin
     plot(ϵP, 0, pKmax,
         ylab = L"\varepsilon",
         xlab = L"P_{B\,\,\mathrm{rest}}(K)\,\,(\mathrm{MeV})")
-    savefig("assumed_e_pK.pdf")
     plot!()
 end
 
@@ -126,7 +125,6 @@ let
         title = "\$p_K\$ related (in)efficiency",
         xlab = L"m(\Lambda_c^+ K^+)\,\,(\mathrm{MeV})",
         ylab = L"m(\overline{\Lambda}_c^- K^+)\,\,(\mathrm{MeV})")
-    savefig("e_on_dalitz.pdf")
     plot!()
 end
 
@@ -136,7 +134,6 @@ let
         sqrt.(lims1(ms))..., ylim = (0, 1),
         xlab = L"m(\overline{\Lambda}_c^- K^+)\,\,(\mathrm{MeV})",
         ylab = L"\epsilon_\mathrm{ph.sp.}")
-    savefig("projected1_e.pdf")
     plot!()
 end
 

@@ -7,23 +7,23 @@ using InteractiveUtils
 # ╔═╡ 342b5e0e-0ede-11f0-33ec-89efc7931f8a
 # ╠═╡ show_logs = false
 begin
-	using Pkg
-	Pkg.activate(mktempdir())
-	Pkg.add([
-		Pkg.PackageSpec(url="https://github.com/mmikhasenko/TriangleSingularity.jl.git"),
-		Pkg.PackageSpec("Plots"),
-		Pkg.PackageSpec("Parameters"),
-		Pkg.PackageSpec("DelimitedFiles"),
-		Pkg.PackageSpec("ThreeBodyDecays"),
-		Pkg.PackageSpec("HadronicLineshapes")
-	])
-	# 
-	using TriangleSingularity
-	using HadronicLineshapes
-	using ThreeBodyDecays
-	using DelimitedFiles
-	using Parameters
-	using Plots
+    using Pkg
+    Pkg.activate(mktempdir())
+    Pkg.add([
+        Pkg.PackageSpec(url = "https://github.com/mmikhasenko/TriangleSingularity.jl.git"),
+        Pkg.PackageSpec("Plots"),
+        Pkg.PackageSpec("Parameters"),
+        Pkg.PackageSpec("DelimitedFiles"),
+        Pkg.PackageSpec("ThreeBodyDecays"),
+        Pkg.PackageSpec("HadronicLineshapes"),
+    ])
+    # 
+    using TriangleSingularity
+    using HadronicLineshapes
+    using ThreeBodyDecays
+    using DelimitedFiles
+    using Parameters
+    using Plots
 end
 
 # ╔═╡ ee339c44-ac70-4315-8504-d37402d073dc
@@ -56,7 +56,7 @@ The model also assumes:
 """
 
 # ╔═╡ a77fe681-4037-424c-ad21-d32e82f88b67
-theme(:boxed, fontfamily="Computer Modern")
+theme(:boxed, fontfamily = "Computer Modern")
 
 # ╔═╡ 090b83c5-b302-45a8-8d3f-7acf2cd79d37
 begin
@@ -67,8 +67,8 @@ begin
     const mπ = 0.13957
     const mψ = 3.686
     const m_ψ4260 = 4.222
-	const Γ_ψ4260 = 0.049
-	const mthr = m_ψ4260+mπ
+    const Γ_ψ4260 = 0.049
+    const mthr = m_ψ4260 + mπ
 
     const mKx = 0.8955
     const ΓKx = 0.047
@@ -78,7 +78,7 @@ begin
 end;
 
 # ╔═╡ 052ed5c9-783a-48cf-8bc3-1f258de39633
-const support = (mψ+mπ, 5.5)
+const support = (mψ + mπ, 5.5)
 
 # ╔═╡ e7e5a97c-0328-4d8d-b7a4-e70dddf41fa2
 md"""
@@ -93,13 +93,13 @@ md"""
 
 # ╔═╡ 49068b63-6c6d-4804-9a23-d2afcf95ff1a
 function A_triangle(s)
-	m1² = (mKx-1im*ΓKx/2)^2# 
-	m2² = (m_ψ4260-1im*Γ_ψ4260/2)^2 # 
-	m3² = mπ^2
-	M3² = mB^2
-	M2² = mK^2
-	M1² = s
-	return triangleloop(m1², m2², m3², M1², M2², M3²)
+    m1² = (mKx - 1im * ΓKx / 2)^2# 
+    m2² = (m_ψ4260 - 1im * Γ_ψ4260 / 2)^2 # 
+    m3² = mπ^2
+    M3² = mB^2
+    M2² = mK^2
+    M1² = s
+    return triangleloop(m1², m2², m3², M1², M2², M3²)
 end
 
 # ╔═╡ 821a6ecf-99cf-4135-877e-a71fb20af9f4
@@ -109,50 +109,49 @@ BW_Z = BreitWigner(4.41, 0.25)
 const scale = A_triangle(BW_Z.m^2) / BW_Z(BW_Z.m^2)
 
 # ╔═╡ 684e722b-91f0-46f5-a09a-45dbaa6989a9
-BW_Z_scaled = BW_Z * (s->scale);
+BW_Z_scaled = BW_Z * (s -> scale);
 
 # ╔═╡ ee227703-3671-4430-9981-6bc1c366d811
 let
-	plot(title="Triangle versus Breit-Wigner")
-	plot!(m->imag(A_triangle(m^2)), support..., lw=2, lab="Triangle")
-	plot!(m->real(A_triangle(m^2)), support..., lw=2)
-	vspan!([support[1],m_ψ4260+mπ], alpha=0.2)
-	#
-	plot!(m->imag(BW_Z_scaled(m^2)), support..., c=1, alpha=0.3, lab="BW")
-	plot!(m->real(BW_Z_scaled(m^2)), support..., c=2, alpha=0.3)
-	plot!(xlab = "\$m(\\psi\\pi)\$ [GeV]", ylab="\$\\Re\\,\\mathcal{A}\$,  \$\\Im\\,\\mathcal{A}\$")
+    plot(title = "Triangle versus Breit-Wigner")
+    plot!(m -> imag(A_triangle(m^2)), support..., lw = 2, lab = "Triangle")
+    plot!(m -> real(A_triangle(m^2)), support..., lw = 2)
+    vspan!([support[1], m_ψ4260 + mπ], alpha = 0.2)
+    #
+    plot!(m -> imag(BW_Z_scaled(m^2)), support..., c = 1, alpha = 0.3, lab = "BW")
+    plot!(m -> real(BW_Z_scaled(m^2)), support..., c = 2, alpha = 0.3)
+    plot!(xlab = "\$m(\\psi\\pi)\$ [GeV]", ylab = "\$\\Re\\,\\mathcal{A}\$,  \$\\Im\\,\\mathcal{A}\$")
 end
 
 # ╔═╡ 1725193d-7262-4fa6-b9c4-4467c141053e
 let
-	plot(title="Triangle versus Breit-Wigner")
-	plot(m->abs2(A_triangle(m^2)), support..., lw=2, lab="triangle")
-	plot!(m->abs2(BW_Z_scaled(m^2)), support..., c=1, alpha=0.3, lab="BW")
-	plot!(xlab = "\$m(\\psi\\pi)\$ [GeV]", ylab="\$|\\mathcal{A}|^2\$")
+    plot(title = "Triangle versus Breit-Wigner")
+    plot(m -> abs2(A_triangle(m^2)), support..., lw = 2, lab = "triangle")
+    plot!(m -> abs2(BW_Z_scaled(m^2)), support..., c = 1, alpha = 0.3, lab = "BW")
+    plot!(xlab = "\$m(\\psi\\pi)\$ [GeV]", ylab = "\$|\\mathcal{A}|^2\$")
 end
 
 # ╔═╡ d2fe0ef3-527a-477b-bc75-ccd1ea467c90
 let
-	mv = range(support..., 3000)
-	Av = @. A_triangle(mv^2)
-	plot(aspect_ratio=1, leg=:topleft)
-	plot!(Av, arrow=true, lw=2, lab="triangle")
-	scatter!([A_triangle(mthr^2)], m=(4, :red, :o), lab="nominal threshold")
-	# 
-	Bv = map(BW_Z_scaled, mv.^2)
-	plot!(Bv, arrow=true, c=1, alpha=0.3, lab="BW")
+    mv = range(support..., 3000)
+    Av = @. A_triangle(mv^2)
+    plot(aspect_ratio = 1, leg = :topleft)
+    plot!(Av, arrow = true, lw = 2, lab = "triangle")
+    scatter!([A_triangle(mthr^2)], m = (4, :red, :o), lab = "nominal threshold")
+    # 
+    Bv = map(BW_Z_scaled, mv .^ 2)
+    plot!(Bv, arrow = true, c = 1, alpha = 0.3, lab = "BW")
 
-	extr = extrema(real.(vcat(Av, Bv)))
-	xlim = extr .+ [-1, 1] * 0.05 * diff(collect(extr))[1]
-	plot!(; xlim, xlab="\$\\Re\\,\\mathcal{A}\$", ylab="\$\\Im\\,\\mathcal{A}\$")
+    extr = extrema(real.(vcat(Av, Bv)))
+    xlim = extr .+ [-1, 1] * 0.05 * diff(collect(extr))[1]
+    plot!(; xlim, xlab = "\$\\Re\\,\\mathcal{A}\$", ylab = "\$\\Im\\,\\mathcal{A}\$")
 end
 
 # ╔═╡ 0cac0956-db52-45aa-827a-52b18ab5e94d
 let
-	mv = range(support..., 100)
-	Av = A_triangle.(mv.^2)
-	data = [mv real.(Av) imag.(Av)]
-	writedlm("triangle_lookup.txt", data)
+    mv = range(support..., 100)
+    Av = A_triangle.(mv .^ 2)
+    data = [mv real.(Av) imag.(Av)]
 end
 
 # ╔═╡ c64817d1-cf89-4b6b-8218-36adf4a09400
@@ -163,18 +162,18 @@ Two reactions overlap in the phase space allowing probability to leak from one f
 """
 
 # ╔═╡ 3869eb43-53ab-414d-8774-4cd6894d4a3e
-ms = ThreeBodyMasses(mψ,mπ,mK; m0=mB)
+ms = ThreeBodyMasses(mψ, mπ, mK; m0 = mB)
 
 # ╔═╡ 6aa344c0-6411-4842-a91f-951a8ac14d57
-ms_coupled = ThreeBodyMasses(m_ψ4260,mπ,mK; m0=mB)
+ms_coupled = ThreeBodyMasses(m_ψ4260, mπ, mK; m0 = mB)
 
 # ╔═╡ 5e383b7d-ecc2-424a-aec6-c12ae97f376d
 begin
-	plot(title="\$B^0\$ decay phase space", aspect_ratio=2)
-	plot!(border31(ms) |> Shape, fillcolor=3, fillalpha=0.1)
-	plot!(border31(ms_coupled) |> Shape, fillcolor=2, fillalpha=0.7)
-	hline!([mKx^2], c=4, lw=5, ann=(4^2, mKx^2, text("\$K^\\star\$", :bottom)))
-	plot!(xlab="\$m^2(\\psi π)\$ [GeV\$^2\$]", ylab="\$m^2(Kπ)\$ [GeV\$^2\$]")
+    plot(title = "\$B^0\$ decay phase space", aspect_ratio = 2)
+    plot!(border31(ms) |> Shape, fillcolor = 3, fillalpha = 0.1)
+    plot!(border31(ms_coupled) |> Shape, fillcolor = 2, fillalpha = 0.7)
+    hline!([mKx^2], c = 4, lw = 5, ann = (4^2, mKx^2, text("\$K^\\star\$", :bottom)))
+    plot!(xlab = "\$m^2(\\psi π)\$ [GeV\$^2\$]", ylab = "\$m^2(Kπ)\$ [GeV\$^2\$]")
 end
 
 # ╔═╡ Cell order:
