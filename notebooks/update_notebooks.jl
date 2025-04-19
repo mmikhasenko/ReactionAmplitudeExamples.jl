@@ -1,11 +1,11 @@
-import Pluto
-import Pkg
+using Pluto: Pluto
+using Pkg: Pkg
 import StatsBase: countmap
 
 
 notebooks = readdir(@__DIR__)
 filter!(notebooks) do name
-    contains(name, r"N-0")
+    contains(name, r"N-09")
 end
 
 map(notebooks) do name

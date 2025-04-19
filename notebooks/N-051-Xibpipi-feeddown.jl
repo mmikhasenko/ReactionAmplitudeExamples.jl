@@ -1,40 +1,34 @@
 ### A Pluto.jl notebook ###
-# v0.19.29
+# v0.20.4
 
 using Markdown
 using InteractiveUtils
 
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
+    #! format: off
     quote
         local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
         local el = $(esc(element))
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
         el
     end
+    #! format: on
 end
 
 # ╔═╡ adad5030-bce6-11ed-3d9e-e96ce1b40926
 # ╠═╡ show_logs = false
 begin
-    # cd(mktempdir())
-    using Pkg
-    Pkg.activate(mktempdir())
-    Pkg.add([
-        PackageSpec("Plots"),
-        PackageSpec("PlutoUI"),
-        PackageSpec(url="https://github.com/mmikhasenko/ThreeBodyDecay.jl")])
-    # 
     using Plots
-    using ThreeBodyDecay
+    using ThreeBodyDecays
     using PlutoUI
 end
 
 # ╔═╡ b3dea2b0-8240-45cf-ab89-6f174a1767d0
-theme(:wong2, size=(500, 350), minorticks=true, grid=false, frame=:box,
-    guidefontvalign=:top, guidefonthalign=:right,
-    foreground_color_legend=nothing, lab="",
-    legendfontsize=9, legend=:topright)
+theme(:wong2, size = (500, 350), minorticks = true, grid = false, frame = :box,
+    guidefontvalign = :top, guidefonthalign = :right,
+    foreground_color_legend = nothing, lab = "",
+    legendfontsize = 9, legend = :topright)
 
 # ╔═╡ a14ec568-7b0d-458e-9c51-fdc9d4ecc0a5
 begin
@@ -129,13 +123,13 @@ md"""
 
 # ╔═╡ 34813e68-05d1-4e9c-9843-f16725e90a2a
 """
-	feeddown13((a,b,c))
+feeddown13((a,b,c))
 
 Computes the mass of the (c1,c3) interval when the resonance is in (c1,c2)
 """
 function feeddown13((a, b, c))
     mR = mass(b[1]) # resonance in [c1,c2]
-    ms = ThreeBodyMasses(mass.(c)..., m0=(mass(a)))
+    ms = ThreeBodyMasses(mass.(c)..., m0 = (mass(a)))
     msq = ms^2
     σ2minmax = σ2of3.([-1, 1], Ref(mR^2), Ref(msq))
     return sqrt.(σ2minmax)
@@ -168,8 +162,8 @@ md"""
 Mass difference $\Xi_b^{\prime-} - \Xi_b^{\prime0}$ : $(@bind shift Slider(3 : 0.01 : 6;	default=ΔmΞbˣ, show_value=true)) MeV
 
 Mass difference $\Xi_b^{**-}(1/2^-) - \Xi_b^{**0}(1/2^-)$ :
-	$(@bind shiftˣˣ Slider(3 : 0.01 : 6;
-	default=(ΔmΞb + ΔmΞbˣ + ΔmΞbˣˣ3h)/3, show_value=true)) MeV
+$(@bind shiftˣˣ Slider(3 : 0.01 : 6;
+default=(ΔmΞb + ΔmΞbˣ + ΔmΞbˣˣ3h)/3, show_value=true)) MeV
 
 """
 
@@ -181,31 +175,31 @@ end;
 
 # ╔═╡ 9fb28a38-c3be-41a4-b7f8-1ade01df51a6
 begin
-    plot(layout=grid(1, 2), size=(500, 700), link=:y, title=["neutral" "charged"])
+    plot(layout = grid(1, 2), size = (500, 700), link = :y, title = ["neutral" "charged"])
     # 
     [mΞb⁰ mΞb′⁰ mΞbˣ⁰ mΞbˣˣ1h⁰ mΞbˣˣ3h⁰] |>
-    x -> plot!(sp=1, complex.(vcat((x .* 1im .+ [-1, 1, NaN])...)), lw=2)
+    x -> plot!(sp = 1, complex.(vcat((x .* 1im .+ [-1, 1, NaN])...)), lw = 2)
     # 
     [mΞbᶜ mΞb′ᶜ mΞbˣᶜ mΞbˣˣ1hᶜ mΞbˣˣ3hᶜ] |>
-    x -> plot!(sp=2, complex.(vcat((x .* 1im .+ [-1, 1, NaN])...)), lw=2)
+    x -> plot!(sp = 2, complex.(vcat((x .* 1im .+ [-1, 1, NaN])...)), lw = 2)
     # 
     # 
     [mΞb⁰ + mπ⁰ mΞbᶜ + mπᶜ] |> # mΞb⁰+2mπ⁰  mΞb⁰+2mπᶜ] |>
-    x -> plot!(sp=1, complex.(vcat((x .* 1im .+ [-1, 1, NaN])...)), ls=:dash)
+    x -> plot!(sp = 1, complex.(vcat((x .* 1im .+ [-1, 1, NaN])...)), ls = :dash)
     [mΞb′⁰ + mπ⁰ mΞb′ᶜ + mπᶜ] |>
-    x -> plot!(sp=1, complex.(vcat((x .* 1im .+ [-1, 1, NaN])...)), ls=:dashdot)
+    x -> plot!(sp = 1, complex.(vcat((x .* 1im .+ [-1, 1, NaN])...)), ls = :dashdot)
     [mΞbˣ⁰ + mπ⁰ mΞbˣᶜ + mπᶜ] |>
-    x -> plot!(sp=1, complex.(vcat((x .* 1im .+ [-1, 1, NaN])...)), ls=:dashdot)
+    x -> plot!(sp = 1, complex.(vcat((x .* 1im .+ [-1, 1, NaN])...)), ls = :dashdot)
     # 
     # 
     [mΞbᶜ + mπ⁰ mΞb⁰ + mπᶜ] |> # mΞbᶜ+2mπ⁰  mΞbᶜ+2mπᶜ] |>
-    x -> plot!(sp=2, complex.(vcat((x .* 1im .+ [-1, 1, NaN])...)), ls=:dash)
+    x -> plot!(sp = 2, complex.(vcat((x .* 1im .+ [-1, 1, NaN])...)), ls = :dash)
     [mΞb′ᶜ + mπ⁰ mΞb′⁰ + mπᶜ] |>
-    x -> plot!(sp=2, complex.(vcat((x .* 1im .+ [-1, 1, NaN])...)), ls=:dashdot)
+    x -> plot!(sp = 2, complex.(vcat((x .* 1im .+ [-1, 1, NaN])...)), ls = :dashdot)
     [mΞbˣᶜ + mπ⁰ mΞbˣ⁰ + mπᶜ] |>
-    x -> plot!(sp=2, complex.(vcat((x .* 1im .+ [-1, 1, NaN])...)), ls=:dashdot)
+    x -> plot!(sp = 2, complex.(vcat((x .* 1im .+ [-1, 1, NaN])...)), ls = :dashdot)
     # 
-    plot!(xaxis="", yaxis="")
+    plot!(xaxis = "", yaxis = "")
 end
 
 # ╔═╡ 30ed523b-c969-4c8b-bdbd-e5f65ce0f636
@@ -273,15 +267,15 @@ end
 
 # ╔═╡ 79a88a33-bd5c-464e-a237-e82471fba555
 let
-    plot(xlim=(0, 50), ylim=(0, 1.5))
+    plot(xlim = (0, 50), ylim = (0, 1.5))
     # Qranges = feeddownQ13.(f1)
     [Ξb′⁰, Ξbˣ⁰] .|>
     m -> plot!((mass(m) - mΞbᶜ - mπᶜ) + 1im .+ [-1, 1];
-        fill=0, alpha=0.5, lab=string(m))
+        fill = 0, alpha = 0.5, lab = string(m))
     # Qranges .|> Qs->plot!(Qs .+ 0.5im, fill=0, alpha=0.3)
-    f1 .|> path -> plot!(feeddownQ13(path) .+ (1im * (1 + isSwave(path)) / 4), fill=0, alpha=0.3,
-        lab=string(path[1][1]) * "→ $(path[2][1])(→$(path[3][1]) $(path[3][2])) $(path[3][3])")
-    plot!(xlab="m(Ξbᶜ πᶜ)-m(Ξbᶜ)-m(πᶜ) (MeV)", ylab="")
+    f1 .|> path -> plot!(feeddownQ13(path) .+ (1im * (1 + isSwave(path)) / 4), fill = 0, alpha = 0.3,
+        lab = string(path[1][1]) * "→ $(path[2][1])(→$(path[3][1]) $(path[3][2])) $(path[3][3])")
+    plot!(xlab = "m(Ξbᶜ πᶜ)-m(Ξbᶜ)-m(πᶜ) (MeV)", ylab = "")
 end
 
 # ╔═╡ 77a5446d-818a-4000-8ca6-5dd7f3c08b80
@@ -293,13 +287,13 @@ end
 
 # ╔═╡ 25bddd7f-61d8-4a77-baef-98ca620ef818
 let
-    plot(xlim=(0, 50), ylim=(0, 1.5))
+    plot(xlim = (0, 50), ylim = (0, 1.5))
     [Ξb′ᶜ, Ξbˣᶜ] .|>
     m -> plot!((mass(m) - mΞb⁰ - mπᶜ) + 1im .+ [-1, 1];
-        fill=0, alpha=0.5, lab=string(m))
-    f2 .|> path -> plot!(feeddownQ13(path) .+ (1im * (1 + isSwave(path)) / 4), fill=0, alpha=0.3,
-        lab=string(path[1][1]) * "→ $(path[2][1])(→$(path[3][1]) $(path[3][2])) $(path[3][3])")
-    plot!(xlab="m(Ξb⁰ πᶜ)-m(Ξb⁰)-m(πᶜ) (MeV)", ylab="")
+        fill = 0, alpha = 0.5, lab = string(m))
+    f2 .|> path -> plot!(feeddownQ13(path) .+ (1im * (1 + isSwave(path)) / 4), fill = 0, alpha = 0.3,
+        lab = string(path[1][1]) * "→ $(path[2][1])(→$(path[3][1]) $(path[3][2])) $(path[3][3])")
+    plot!(xlab = "m(Ξb⁰ πᶜ)-m(Ξb⁰)-m(πᶜ) (MeV)", ylab = "")
 end
 
 # ╔═╡ Cell order:
