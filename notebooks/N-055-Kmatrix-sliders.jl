@@ -106,10 +106,11 @@ mth, m_max = 4.4, 10
 
 # ╔═╡ 6104256c-7df7-42c5-ac3a-386e0f337c4e
 begin
+	mv = range(mth, m_max, 100)
 	plot()
-	plot!(m->abs2(A(m)[1]), mth, m_max)
-	plot!(m->abs2(production_pole(F, m, 1)[1]), mth, m_max, fill=0, fillalpha=0.3)
-	plot!(m->abs2(production_pole(F, m, 2)[1]), mth, m_max, fill=0, fillalpha=0.3)
+	plot!(m->abs2(A(m)[1]), mv)
+	plot!(m->abs2(production_pole(F, m, 1)[1]), mv, fill=0, fillalpha=0.3)
+	plot!(m->abs2(production_pole(F, m, 2)[1]), mv, fill=0, fillalpha=0.3)
 end
 
 # ╔═╡ Cell order:
