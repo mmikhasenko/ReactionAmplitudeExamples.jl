@@ -5,7 +5,7 @@ import StatsBase: countmap
 
 notebooks = readdir(@__DIR__)
 filter!(notebooks) do name
-    contains(name, r"N-09")
+    contains(name, r"N-0")
 end
 
 map(notebooks) do name
