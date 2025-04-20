@@ -16,8 +16,12 @@ end
 
 # ╔═╡ c98f5a1b-5f6b-4360-9a0a-ad5a0a5d1165
 md"""
-# Angular distribition
-in $\Omega_c^{**0}\to \Xi_c^{+}(\to pK^-\pi^+) K^-$
+# Angular distribition with SymPy
+
+
+We use an example of $\Omega_c^{**0}\to \Xi_c^{+}(\to pK^-\pi^+) K^-$ decays to showcase usage of symbolic calculations in julia.
+
+Related to LHCb studies from [the paper](https://inspirehep.net/literature/1879440).
 """
 
 # ╔═╡ 02a8f5ec-c67f-4d17-8a8b-fcb81c9f2d8a

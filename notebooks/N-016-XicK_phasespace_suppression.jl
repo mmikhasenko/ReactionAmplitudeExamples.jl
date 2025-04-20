@@ -11,6 +11,15 @@ begin
     using LaTeXStrings
 end
 
+# ╔═╡ 2d5b1925-d63d-4d47-8752-6aed91f8a504
+md"""
+# Coupled channel and small phase space
+
+This notebook looks at $\Xi_c^{\prime+}K^-$ and $\Xi_c^+K^-$ decay systems of the $\Omega_c^0(3065)$ and showcases how the final state with higher threshold effect the lineshape.
+
+Related to [LHCb studies](https://inspirehep.net/literature/1879440) of $\Omega_c^{**0}$ in $\Omega_b$ decays.
+"""
+
 # ╔═╡ f43f26b6-a855-4259-b2f6-de6e98c79895
 # 2021-10-27 Misha Mikhasenko
 
@@ -21,11 +30,6 @@ theme(:wong2, size=(500, 350), minorticks=true, grid=false, frame=:box,
     legendfontsize=9, legend=:topright,
     xlim=(:auto, :auto), ylim=(:auto, :auto), lab="",
     xlab=L"m(\Xi_c^+K^-)-m(\Xi_c^+)-m(K^-)\,\,\,\,[\mathrm{MeV}]")
-
-# ╔═╡ 2d5b1925-d63d-4d47-8752-6aed91f8a504
-md"""
-## Phase space suppression of $\Xi_c^{\prime+}K^-$ over $\,\,\Xi_c^+K^-$ for $\,\,\Omega_c^0(3065)$
-"""
 
 # ╔═╡ d5d07378-d5ec-4e70-ab58-23db0b0d65c2
 begin
@@ -1231,10 +1235,10 @@ version = "1.4.1+2"
 """
 
 # ╔═╡ Cell order:
-# ╠═f9470de0-371f-11ec-1d6d-fdcd8de5d285
-# ╠═f43f26b6-a855-4259-b2f6-de6e98c79895
-# ╠═7fcc7169-9939-4316-9ed5-d1c5e04f5817
 # ╟─2d5b1925-d63d-4d47-8752-6aed91f8a504
+# ╠═f43f26b6-a855-4259-b2f6-de6e98c79895
+# ╠═f9470de0-371f-11ec-1d6d-fdcd8de5d285
+# ╠═7fcc7169-9939-4316-9ed5-d1c5e04f5817
 # ╠═d5d07378-d5ec-4e70-ab58-23db0b0d65c2
 # ╟─23fcaf28-4354-4069-9fe7-4b8048333d02
 # ╠═d15cdb75-9f0e-4941-882b-7fa2e1d4c075

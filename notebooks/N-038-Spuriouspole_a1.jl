@@ -18,8 +18,8 @@ end
 
 # ╔═╡ 91561120-d32c-11ea-1551-a3d6958590ae
 begin
-	using Plots
-	using PlutoUI
+    using Plots
+    using PlutoUI
 end
 
 # ╔═╡ 3b6671a0-d32d-11ea-2ea7-25f28d17f69b
@@ -36,23 +36,19 @@ $\Gamma(s) = \frac{g^2}{16\pi s}\sqrt{(s-(m_1+m_2)^2)(s-(m_1-m_2)^2)}\,,$
 "
 
 # ╔═╡ a6a42b20-d32c-11ea-172f-79bd3b94cb58
-theme(:wong2, minorticks=true, grid=false, frame=:box,
-    guidefontvalign=:top, guidefonthalign=:right,
-    foreground_color_legend = nothing,
-    legendfontsize=9, legend =:topright,
-    xlim=(:auto,:auto), ylim=(:auto,:auto))
+theme(:boxed)
 
 # ╔═╡ a2f9ef30-d329-11ea-28ea-65e3bb0c5e8f
 function BW(s; mR, m1, m2, g, ϕ = 0.0)
-	1.0/(mR^2-s-1.0im*g^2*
-		sqrt(cis(ϕ)*(s-(m1+m2)^2))*sqrt(s-(m1-m2)^2)*cis(-ϕ/2.0) / (16π*s))
+    1.0 / (mR^2 - s - 1.0im * g^2 *
+                      sqrt(cis(ϕ) * (s - (m1 + m2)^2)) * sqrt(s - (m1 - m2)^2) * cis(-ϕ / 2.0) / (16π * s))
 end
 
 # ╔═╡ ed9ada90-d329-11ea-3db4-a9516b50f33a
 begin
-	const mρ = 0.77
-	const mπ = 0.139
-	const ma₁ = 1.26
+    const mρ = 0.77
+    const mπ = 0.139
+    const ma₁ = 1.26
 end;
 
 # ╔═╡ 10815fb2-d32b-11ea-2791-0de8578c4516
@@ -64,25 +60,25 @@ g = $(@bind g Slider(range(1.0, 6.0, length=11); show_value=true, default=5.0))
 """
 
 # ╔═╡ df492ef9-59c1-45bf-95de-273139169e78
-amp(s) = BW(s; m1=mρ, m2=mπ, mR, g)
+amp(s) = BW(s; m1 = mρ, m2 = mπ, mR, g)
 
 # ╔═╡ b7fc3320-d329-11ea-1afd-7db1872cdcea
 begin
-	plot(s->abs2(amp(s+1e-3im)), -0.1, 3.0, lab="A²(R→ρπ)", xlab="s (GeV)")
-	vspan!([-0.1,(mρ+mπ)^2], α=0.1, lab="unphysical")
+    plot(s -> abs2(amp(s + 1e-3im)), -0.1, 3.0, lab = "A²(R→ρπ)", xlab = "s (GeV)")
+    vspan!([-0.1, (mρ + mπ)^2], α = 0.1, lab = "unphysical")
 end
 
 # ╔═╡ e8f4d21e-d329-11ea-3545-65d07d5b73e1
-let 
-	sxv = range(-0.1, 3.0, length=50)
-	syv = range(-1.0, 0.3, length=50)
-    cal = [amp(sx+1.0im*sy) for sy in syv, sx in sxv]
-	# 
-    contour(sxv, syv, log.(abs.(cal)), levels=20,
-			xlab="Re s (GeV)", ylab="Im s (GeV)")
-	hline!([0.0], l=(2,:red), lab="", colorbar=false,
-		ann=(2.5, 0, text("Real axis", :red, 11, :bottom)))
-	vspan!([-0.1,(mρ+mπ)^2], α=0.1, lab="unphysical")
+let
+    sxv = range(-0.1, 3.0, length = 50)
+    syv = range(-1.0, 0.3, length = 50)
+    cal = [amp(sx + 1.0im * sy) for sy in syv, sx in sxv]
+    # 
+    contour(sxv, syv, log.(abs.(cal)), levels = 20,
+        xlab = "Re s (GeV)", ylab = "Im s (GeV)")
+    hline!([0.0], l = (2, :red), lab = "", colorbar = false,
+        ann = (2.5, 0, text("Real axis", :red, 11, :bottom)))
+    vspan!([-0.1, (mρ + mπ)^2], α = 0.1, lab = "unphysical")
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001

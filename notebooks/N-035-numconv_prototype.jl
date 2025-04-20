@@ -25,6 +25,13 @@ begin
 	using PlutoUI
 end
 
+# ╔═╡ e66d5803-6e0d-41b6-ae59-e0e367a971d0
+md"""
+# Numerical convolution (primitive demo)
+
+A simple demonstration how numerical convolution smears the shape.
+"""
+
 # ╔═╡ 5a9d2ad0-c97a-4b03-a061-16ac9bd1d03a
 theme(:wong2, frame=:box, grid=false, minorticks=true,
     guidefontvalign=:top, guidefonthalign=:right,
@@ -1205,6 +1212,7 @@ version = "1.4.1+2"
 """
 
 # ╔═╡ Cell order:
+# ╟─e66d5803-6e0d-41b6-ae59-e0e367a971d0
 # ╠═75521440-d29b-11ec-2ea2-aff92f37ee20
 # ╠═5a9d2ad0-c97a-4b03-a061-16ac9bd1d03a
 # ╠═a3d8c381-5fa2-461d-9f62-959a97002179
