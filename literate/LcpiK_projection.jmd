@@ -83,10 +83,7 @@ using SymPy
 # python library for Clebsch-Gordan
 import PyCall
 PyCall.pyimport_conda("sympy.physics.wigner", "sympy")
-import_from(sympy.physics.quantum.spin, (:WignerD,), typ=:Any)
-# python library for Wigner d
 PyCall.pyimport_conda("sympy.physics.quantum.spin", "sympy")
-import_from(sympy.physics.wigner)
 #
 @vars θ real=true
 @vars cosθ real=true
@@ -99,9 +96,9 @@ __Angular part of the amplitude is following.__
 ```julia; results="hidden"
 function amplitude(J,L,Λ,λ,S=1hf)
     return simplify(
-        clebsch_gordan(L,S,J,0,Λ,Λ) *
-        clebsch_gordan(1n,hf,S,0,λ,λ) * # P-wave
-        WignerD(S,Λ,λ,0,θ,0).doit())
+        sympy.physics.wigner.clebsch_gordan(L,S,J,0,Λ,Λ) *
+        sympy.physics.wigner.clebsch_gordan(1n,hf,S,0,λ,λ) * # P-wave
+        sympy.physics.quantum.spin.WignerD(S,Λ,λ,0,θ,0).doit())
 end
 #
 intensity(J,L,S=1hf) = simplify(sum(abs2(amplitude(J,L,Λ,λ,S)) for Λ=-S:1:S, λ=[-hf,hf]))

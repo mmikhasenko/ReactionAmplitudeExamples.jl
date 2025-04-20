@@ -12,23 +12,20 @@ begin
     Pkg.add([
         Pkg.PackageSpec("PyCall"),
         Pkg.PackageSpec("SymPy"),
-        Pkg.PackageSpec("Parameters")
+        Pkg.PackageSpec("Parameters"),
     ])
     # 
     using Parameters
     using SymPy
     # 
-    import PyCall
-    PyCall.pyimport_conda("sympy.physics.wigner", "sympy")
+    using PyCall: PyCall
     PyCall.pyimport_conda("sympy.physics.quantum.spin", "sympy")
-    # 
-    import_from(sympy.physics.wigner)
-    # import_from(sympy.physics.quantum.cg, )
-    import_from(sympy.physics.quantum.spin, (:WignerD, :CG), typ=:Any)
 end
 
 # ╔═╡ 072ab567-6b5b-4e90-9127-1debf2a9cffa
 md"""
+# Analysis of $\Xi_b^{**0,-} \to \Xi_b^{0,-} \pi^+ \pi^-$
+
 ## Transition $\text{baryon} \to \text{baryon}\,0^-\,0^-$
 via intermediate $1/2$ and $3/2$
 """
@@ -62,12 +59,12 @@ end
 # ╔═╡ 8a4791c4-56a1-4404-b9aa-5dd67151deeb
 dl(j0, l, λ, ν; ξ::Chain) =
     sqrt((2l + Sym(1)) * (2ξ.l + Sym(1)) / (2j0 + Sym(1))) *
-    CG(l, 0, ξ.j, ν, j0, ν) * WignerD(ξ.j, ν, λ, 0, θ, 0) * CG(ξ.l, 0, 1 / Sym(2), λ, ξ.j, λ)
+    CG(l, 0, ξ.j, ν, j0, ν) * sympy.physics.quantum.spin.WignerD(ξ.j, ν, λ, 0, θ, 0) * CG(ξ.l, 0, 1 / Sym(2), λ, ξ.j, λ)
 
 # ╔═╡ 90156e3d-4c68-4069-99a5-941a23682342
 let # call the function for symbols
     @syms λ ν j l L j0 => "j_0"
-    I = dl(j0, L, λ, ν; ξ=Chain(; j, l))
+    I = dl(j0, L, λ, ν; ξ = Chain(; j, l))
     # 
     Markdown.parse(
         "```math\n\\begin{align}\n \\mathcal{A}_{" *
@@ -114,9 +111,9 @@ The result of calculations in this notebook follows:
 
 # ╔═╡ 87c3caed-8085-4de7-a0a1-c65db729229d
 Ob2XcKpi_intensity = [
-    I(1 / Sym(2), 0; ξ=Chain("1/2-")),
-    I(1 / Sym(2), 1; ξ=Chain("3/2-")),
-    I(1 / Sym(2), 2; ξ=Chain("5/2-"))
+    I(1 / Sym(2), 0; ξ = Chain("1/2-")),
+    I(1 / Sym(2), 1; ξ = Chain("3/2-")),
+    I(1 / Sym(2), 2; ξ = Chain("5/2-")),
 ] .|> simplify
 
 # ╔═╡ c48dfb50-b64b-4ef3-9545-d1f301f25ab6
@@ -145,14 +142,14 @@ end;
 
 # ╔═╡ ebc8e328-1ce5-4a56-81fc-29f37ca17d28
 via_Ξc′ = [
-    I(1 / Sym(2), 0; ξ=Ξc′),
-    I(3 / Sym(2), 2; ξ=Ξc′)
+    I(1 / Sym(2), 0; ξ = Ξc′),
+    I(3 / Sym(2), 2; ξ = Ξc′),
 ] .|> simplify
 
 # ╔═╡ 89de2412-ee68-44ce-b209-85677d96e806
 via_Ξcˣ = [
-    I(3 / Sym(2), 0; ξ=Ξcˣ),
-    I(1 / Sym(2), 2; ξ=Ξcˣ)
+    I(3 / Sym(2), 0; ξ = Ξcˣ),
+    I(1 / Sym(2), 2; ξ = Ξcˣ),
 ] .|> simplify
 
 # ╔═╡ Cell order:
