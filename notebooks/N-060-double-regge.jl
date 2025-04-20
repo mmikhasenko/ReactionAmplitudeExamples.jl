@@ -12,13 +12,31 @@ begin
 	using DataFrames
 end
 
-# ╔═╡ a6b4dc2d-9b06-49b6-a065-a866d0505e66
-begin
-	const s12 = 18
-	const s2 = 2
-	const α1 = -0.3
-	const α2 = -0.3
-end
+# ╔═╡ 85928b3d-0949-465e-8b68-8b5e34dfe663
+md"""
+# Double-Regge divergent integral
+
+This notebook computes an two-dimentional integral related to the double-regge investigation. 
+"""
+
+# ╔═╡ 6f6da494-a19c-404b-9ac3-460b98d86b47
+theme(:boxed)
+
+# ╔═╡ 462875dc-3551-447d-ac21-a30de8857f16
+md"""
+The integrand reads
+
+```math
+dA(y_1,y_2) = \frac{y_1^{-1-\alpha_1}}{1-y_1 s_1} \frac{y_2^{-1-\alpha_2}}{1-y_2 s_2} \frac{1}{1-y_1y_2 s_1s_2} 
+```
+
+it needs to be integrated in a domain:
+```math
+y_1 \times y_2 = [0,1] \times [0,1]
+```
+
+We use a numerical library [`Cuba.jl`](https://github.com/giordano/Cuba.jl) with a method `cuhre`, see [the original c++ implementation](https://github.com/JohannesBuchner/cuba).
+"""
 
 # ╔═╡ 237e7a70-a260-49f5-adf7-2d71735ccf80
 function double_regge(y1, y2; pars)
@@ -33,6 +51,14 @@ function A(; pars)
 	integrand(x,f) = f[1:2] .= reim(double_regge(x[1], x[2]; pars))
 	v = cuhre(integrand, 2, 2).integral
 	complex(v...)
+end
+
+# ╔═╡ a6b4dc2d-9b06-49b6-a065-a866d0505e66
+begin
+	const s12 = 18
+	const s2 = 2
+	const α1 = -0.3
+	const α2 = -0.3
 end
 
 # ╔═╡ b3ffe9a4-1c47-43b7-89f0-4a0b8737e52a
@@ -1268,7 +1294,10 @@ version = "1.4.1+2"
 """
 
 # ╔═╡ Cell order:
+# ╟─85928b3d-0949-465e-8b68-8b5e34dfe663
 # ╠═0e210232-40fa-11ee-1899-5d640fc94422
+# ╠═6f6da494-a19c-404b-9ac3-460b98d86b47
+# ╟─462875dc-3551-447d-ac21-a30de8857f16
 # ╠═237e7a70-a260-49f5-adf7-2d71735ccf80
 # ╠═752f8321-08c9-4c84-a92f-27859525cc3a
 # ╠═a6b4dc2d-9b06-49b6-a065-a866d0505e66

@@ -7,25 +7,18 @@ using InteractiveUtils
 # ╔═╡ 509e3384-d593-11ee-0478-df632bee8732
 # ╠═╡ show_logs = false
 begin
-	using Pkg: add, PackageSpec, activate
-	activate(mktempdir())
-	# 
-	add([
-		PackageSpec("Plots"),
-		PackageSpec("Parameters"),
-		PackageSpec("QuadGK"),
-		PackageSpec("ThreeBodyDecays"),
-		PackageSpec("LaTeXStrings")])
-	# 
 	using Plots
 	using ThreeBodyDecays
 	using Parameters
+	using HadronicLineshapes
 	using QuadGK
 end
 
 # ╔═╡ 9b704dc2-e9a9-4a9d-8b3a-a9223eff0ba9
 md"""
 # Projections of $\Lambda_c^+ \pi^+ \pi^-$ Dalitz plot
+
+This notebook is related on ongoing investigation of the $\Lambda_b^0\to\Lambda_c^+ 3\pi$ decays. There are a lot of narrow subchannel resonances that produce a visible structures in cross channels. Here we look at the examples of $\Sigma_c$ states in $\Lambda_c^+ \pi^+\pi^-$ decays. 
 """
 
 # ╔═╡ 9529be42-19f0-4cec-957a-a327ebb4df0c
@@ -45,49 +38,6 @@ mygetindex(model::ThreeBodyDecay, key...) =
 md"""
 ## Resonance lineshape business
 """
-
-# ╔═╡ 88b10746-b225-4691-9674-59e21288e464
-begin
-	abstract type AbstractFlexFunc end
-	struct BW{T} <: AbstractFlexFunc
-		m::T
-		Γ::T
-	end
-	(bw::BW)(σ::Number) = 1/(bw.m^2-σ-1im*bw.m*bw.Γ)
-	# 
-	struct BlattWeisskopf{L} <: AbstractFlexFunc
-		d::Float64
-	end
-	breakup(m,m1,m2) = sqrt((m-(m1+m2))*(m+(m1+m2))*(m-(m1-m2))*(m+(m1-m2)))/2m
-	(bw::BlattWeisskopf{L})(p::Number) where L = error("BlattWeisskopf{L} is not defined for L>2")
-	(bw::BlattWeisskopf{0})(p::Number) = one(p)
-	(bw::BlattWeisskopf{1})(p::Number) = (z² = (bw.d*p)^2; sqrt(z²)/sqrt(1+z²))
-	(bw::BlattWeisskopf{2})(p::Number) = (z² = (bw.d*p)^2; sqrt(z²^2)/sqrt(9+3*z²+z²^2))
-	(bw::BlattWeisskopf{3})(p::Number) = (z² = (bw.d*p)^2; sqrt(z²^3)/sqrt(225 + 45z² + 6z²^2 + z²^3))
-	# 
-	struct Compose{T, X} <: AbstractFlexFunc
-		A::T
-		F::X
-	end
-	(f::Compose)(σ::Number) = f.F(f.A(σ))
-	(f::AbstractFlexFunc)(a::Function) = Compose(a, f)
-	(f::AbstractFlexFunc)(a::AbstractFlexFunc) = Compose(a, f)
-	# 
-	struct Scale{T<:AbstractFlexFunc, X<:Number} <: AbstractFlexFunc
-		F::T
-		S::X
-	end
-	import Base:*
-	*(f::AbstractFlexFunc, x::Number) = Scale(f,x)
-	(p::Scale)(σ::Number) = p.F(σ) * p.S
-	# 
-	struct Product{T1 <: AbstractFlexFunc, T2 <: AbstractFlexFunc} <: AbstractFlexFunc
-		F1::T1
-		F2::T2
-	end
-	*(F1::AbstractFlexFunc, F2::AbstractFlexFunc) = Product(F1,F2)
-	(p::Product)(σ::Number) = p.F1(σ) * p.F2(σ)
-end
 
 # ╔═╡ f38b969a-3ffc-44e5-bab1-d0ed05f036ab
 md"""
@@ -136,10 +86,10 @@ end
 
 # ╔═╡ 5edd6915-ca29-4f38-9522-21e411b8a293
 begin
-	const bwΣc2520pp = BW(2518.41e-3, 14.7782e-3);
-	const bwΣc2520z = BW(2518.48e-3, 15.321e-3);
-	const bwΣc2455pp = BW(2453.97e-3, 1.89015e-3);
-	const bwΣc2455z = BW(2453.75e-3, 1.82902e-3);
+	const bwΣc2520pp = BreitWigner(2518.41e-3, 14.7782e-3);
+	const bwΣc2520z = BreitWigner(2518.48e-3, 15.321e-3);
+	const bwΣc2455pp = BreitWigner(2453.97e-3, 1.89015e-3);
+	const bwΣc2455z = BreitWigner(2453.75e-3, 1.82902e-3);
 end;
 
 # ╔═╡ 3ff92c09-99a3-402b-97bd-a0776281d34b
@@ -148,7 +98,7 @@ begin
 	chains_2520z = chainsLS(; k=3, Rjp=jp"3/2+", propagator=bwΣc2520z);
 	chains_2455pp = chainsLS(; k=3, Rjp=jp"1/2+", propagator=bwΣc2455pp);
 	chains_2455z = chainsLS(; k=2, Rjp=jp"1/2+", propagator=bwΣc2455z);
-	chains_f0 = chainsLS(; k=1, Rjp=jp"0+", propagator=BW(0.45,0.6));
+	chains_f0 = chainsLS(; k=1, Rjp=jp"0+", propagator=BreitWigner(0.45,0.6));
 end;
 
 # ╔═╡ 284c14a8-b7ed-424d-9b76-49bdb2bdfccb
@@ -223,13 +173,14 @@ end
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+HadronicLineshapes = "49c9d978-1f9d-4e96-a984-0a9783c0b9bf"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
-Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 ThreeBodyDecays = "e6563dab-9ca1-5843-bde3-2ccf38d63843"
 
 [compat]
+HadronicLineshapes = "~0.4.1"
 Parameters = "~0.12.3"
 Plots = "~1.39.0"
 QuadGK = "~2.9.4"
@@ -242,7 +193,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.11.3"
 manifest_format = "2.0"
-project_hash = "70772b10eccf313a2db0ab2a6ad38619a1eca61f"
+project_hash = "dbf7b599cb9110631211b3e6ceabe51566f578c0"
 
 [[deps.AliasTables]]
 deps = ["PtrArrays", "Random"]
@@ -512,6 +463,12 @@ deps = ["Base64", "CodecZlib", "ConcurrentUtilities", "Dates", "ExceptionUnwrapp
 git-tree-sha1 = "f93655dc73d7a0b4a368e3c0bce296ae035ad76e"
 uuid = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 version = "1.10.16"
+
+[[deps.HadronicLineshapes]]
+deps = ["Parameters", "QuadGK", "StaticArrays"]
+git-tree-sha1 = "7327537157a6cbd0231f3138aadf62ecbb44c4e0"
+uuid = "49c9d978-1f9d-4e96-a984-0a9783c0b9bf"
+version = "0.4.1"
 
 [[deps.HarfBuzz_jll]]
 deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "Graphite2_jll", "JLLWrappers", "Libdl", "Libffi_jll"]
@@ -1429,7 +1386,6 @@ version = "1.4.1+2"
 # ╠═9529be42-19f0-4cec-957a-a327ebb4df0c
 # ╠═93738a65-49c2-44c8-a91a-9c95e251e04c
 # ╟─4a9d42b6-2f71-4008-a76a-fc9c5ea9f446
-# ╠═88b10746-b225-4691-9674-59e21288e464
 # ╟─f38b969a-3ffc-44e5-bab1-d0ed05f036ab
 # ╠═50a7c25f-dfac-471c-9fef-0301ccc26e14
 # ╠═d9c8e573-0818-4fb0-9212-0c01116b8d26
