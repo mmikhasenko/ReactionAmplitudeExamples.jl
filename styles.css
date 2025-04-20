@@ -5,10 +5,70 @@ body, html {
 }
 
 .index-panel {
-    flex: 1;
+    position: relative;
+    width: 300px;
+    min-width: 50px;
     background-color: #9ed380;
     padding: 20px;
     overflow: auto;
+    transition: width 0.3s;
+    height: 100vh;
+    box-sizing: border-box;
+}
+
+.index-panel.collapsed {
+    width: 30px;
+    padding: 10px 5px;
+}
+
+.index-panel .content {
+    opacity: 1;
+    transition: opacity 0.3s;
+    width: 100%;
+}
+
+.index-panel.collapsed .content {
+    opacity: 0;
+}
+
+.resize-handle {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.1);
+    cursor: col-resize;
+}
+
+.resize-handle:hover {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.toggle-button {
+    position: absolute;
+    right: -15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 15px;
+    height: 30px;
+    background-color: #9ed380;
+    border: none;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toggle-button::after {
+    content: "◄";
+    font-size: 10px;
+}
+
+.index-panel.collapsed .toggle-button::after {
+    content: "►";
 }
 
 .index-panel ul {

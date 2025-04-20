@@ -3,9 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ReactionAmplitudeExamples.jl</title>
+    <title>notebooks</title>
     <link rel="stylesheet" href="styles.css">
     <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+        }
+        .container {
+            width: 100%;
+            height: 100vh;
+        }
+        .index-panel {
+            position: relative;
+            width: 300px;
+            min-width: 50px;
+            height: 100vh;
+            overflow-y: auto;
+            float: left;
+            padding: 20px;
+            box-sizing: border-box;
+            background-color: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+            transition: width 0.3s;
+        }
+        .index-panel.collapsed {
+            width: 30px;
+            padding: 10px 5px;
+        }
+        .index-panel .content {
+            opacity: 1;
+            transition: opacity 0.3s;
+            width: 100%;
+        }
+        .index-panel.collapsed .content {
+            opacity: 0;
+        }
+        .resize-handle {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.1);
+            cursor: col-resize;
+        }
+        .resize-handle:hover {
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+        .toggle-button {
+            position: absolute;
+            right: -15px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 15px;
+            height: 30px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-left: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .toggle-button::after {
+            content: "◄";
+            font-size: 10px;
+        }
+        .index-panel.collapsed .toggle-button::after {
+            content: "►";
+        }
+        .iframe-container {
+            margin-left: 300px;
+            height: 100vh;
+            transition: margin-left 0.3s;
+        }
+        .index-panel.collapsed + .iframe-container {
+            margin-left: 30px;
+        }
+        .notebook-display {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
         .untitled-warning {
             color: #856404;
             background-color: #fff3cd;
@@ -20,15 +103,33 @@
             display: block;
             margin-top: 4px;
         }
+        .notebook-details {
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+        .subtitles {
+            margin: 5px 0;
+            padding-left: 20px;
+            list-style-type: disc;
+        }
+        .title {
+            font-weight: bold;
+        }
+        h3 {
+            margin-top: 0;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="index-panel">
-            <h3>Index</h3>
-            <ul>
-                <li><a href="README.html" target="notebook-frame">README</a></li>
-           <li>
+            <div class="resize-handle"></div>
+            <button class="toggle-button"></button>
+            <div class="content">
+                <h3>Index</h3>
+                <ul>
+                    <li><a href="README.html" target="notebook-frame">README</a></li>
+               <li>
     <a href="notebooks/L-014-MixedModel-chi2.html" target="notebook-frame">L-014-MixedModel-chi2.jl</a>
     <div class="notebook-details">
         <span class="untitled-warning">L-014-MixedModel-chi2.jl</span>
@@ -317,6 +418,14 @@
     </div>
 </li>
 <li>
+    <a href="notebooks/N-039-Mmatrix_and_Kmatrix.html" target="notebook-frame">N-039-Mmatrix_and_Kmatrix.jl</a>
+    <div class="notebook-details">
+        <span class="title">Constant K/M-matrix approach</span>
+        
+        <ul class="subtitles"><li>K-matrix parameters</li><li>M-matrix</li></ul>
+    </div>
+</li>
+<li>
     <a href="notebooks/N-039-logsqrt_complex_structure.html" target="notebook-frame">N-039-logsqrt_complex_structure.jl</a>
     <div class="notebook-details">
         <span class="title">Example of log-sqrt function</span>
@@ -444,6 +553,17 @@
         <span class="title">Constant K/M-matrix approach</span>
         
         <ul class="subtitles"><li>K-matrix parameters</li><li>M-matrix</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-056-Chew-Mandelstam.html" target="notebook-frame">N-056-Chew-Mandelstam.jl</a>
+    <div class="notebook-details">
+        <span class="untitled-warning">N-056-Chew-Mandelstam.jl</span>
+        <span class="warning-message">
+    ⚠️ This notebook needs a title and description. 
+    Please add a markdown cell with a # Title and brief description.
+</span>
+        <ul class="subtitles"></ul>
     </div>
 </li>
 <li>
@@ -577,10 +697,65 @@
     </div>
 </li>
  </ul>
+            </div>
         </div>
         <div class="iframe-container">
             <iframe name="notebook-frame" class="notebook-display" src="README.html"></iframe>
         </div>
     </div>
+    <script>
+        // Sidebar resize functionality
+        const resizeHandle = document.querySelector('.resize-handle');
+        const sidebar = document.querySelector('.index-panel');
+        const container = document.querySelector('.container');
+        const iframeContainer = document.querySelector('.iframe-container');
+        let isResizing = false;
+
+        function handleMouseMove(e) {
+            if (!isResizing) return;
+            e.preventDefault();
+            // Calculate new width based on mouse position
+            const newWidth = Math.max(50, Math.min(600, e.clientX));
+            sidebar.style.width = newWidth + 'px';
+            iframeContainer.style.marginLeft = newWidth + 'px';
+        }
+
+        function stopResize(e) {
+            if (!isResizing) return;
+            isResizing = false;
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', stopResize);
+            window.removeEventListener('mouseleave', stopResize);
+        }
+
+        resizeHandle.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            isResizing = true;
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', stopResize);
+            window.addEventListener('mouseleave', stopResize);
+        });
+
+        // Sidebar collapse functionality
+        const toggleButton = document.querySelector('.toggle-button');
+        
+        toggleButton.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            iframeContainer.style.marginLeft = isCollapsed ? '30px' : '300px';
+            
+            // Store the current state
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+        });
+
+        // Restore sidebar state on page load
+        window.addEventListener('load', () => {
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                sidebar.classList.add('collapsed');
+                iframeContainer.style.marginLeft = '30px';
+            }
+        });
+    </script>
 </body>
 </html>

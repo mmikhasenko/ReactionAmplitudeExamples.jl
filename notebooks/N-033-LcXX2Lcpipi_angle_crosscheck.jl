@@ -8,7 +8,6 @@ using InteractiveUtils
 begin
     using Corpuscles
     using ThreeBodyDecays
-    using Corpuscles
     using Corpuscles.Unitful
 end
 
@@ -20,11 +19,11 @@ md"""
 # ╔═╡ 7735bcf3-a395-4ca3-bed9-3e9480fe437b
 begin
     const mΛcˣˣ = convert(Float64,
-        Particle("Lambda(c)(2625)").mass.value / 1u"GeV*c^-2")
+        Particle("Lambda(c)(2625)+").mass.value / 1u"GeV*c^-2")
     const mΛc = convert(Float64,
-        Particle("Lambda(c)").mass.value / 1u"GeV*c^-2")
+        Particle("Lambda(c)+").mass.value / 1u"GeV*c^-2")
     const mπ = convert(Float64,
-        Particle("pi").mass.value / 1u"GeV*c^-2")
+        Particle("pi+").mass.value / 1u"GeV*c^-2")
 end;
 
 # ╔═╡ fce3386c-7e11-4690-8599-437d1ff5e280
