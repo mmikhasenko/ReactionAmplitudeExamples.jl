@@ -1,15 +1,8 @@
 ### A Pluto.jl notebook ###
-# v0.19.29
+# v0.20.4
 
 using Markdown
 using InteractiveUtils
-
-# ╔═╡ 2c3s5aaa-0660-4d61-bac2-aff30fe8768b
-md"""
-# Scattering length at $D_s^+D_s^-$ threshold
-
-This notebook is related to an observation of the threshold enhancement in the $D_s^+D_s^-$ system seen by LHCb ([inspirehep](https://inspirehep.net/literature/2690240)).
-"""
 
 # ╔═╡ 3c395aaa-0660-4d61-bac2-aff30fe8768b
 # ╠═╡ show_logs = false
@@ -32,6 +25,13 @@ begin
     using EffectiveRangeExpansion
     using Distributions
 end;
+
+# ╔═╡ cb72ab24-8107-4fb2-b70f-d381eb80d606
+md"""
+# Scattering length at $D_s^+D_s^-$ threshold
+
+This notebook is related to an observation of the threshold enhancement in the $D_s^+D_s^-$ system seen by LHCb ([inspirehep](https://inspirehep.net/literature/2690240)).
+"""
 
 # ╔═╡ b2775c19-294a-45e4-a106-3bb41e32c8ea
 theme(:wong2, frame = :box, grid = false, minorticks = true,
@@ -124,8 +124,8 @@ md"""
 # ╔═╡ caa3c578-15b7-4424-a73a-9484b2bd5403
 Corr = Symmetric(
     [1.0 0.95089658 -0.93626351
-                       0.95089658 1.0 -0.97610506
-                       -0.93626351 -0.97610506 1.0])
+                          0.95089658 1.0 -0.97610506
+                          -0.93626351 -0.97610506 1.0])
 
 # ╔═╡ 933005c9-c2a6-45e1-a911-78213f4ab910
 DG = begin
@@ -176,7 +176,7 @@ begin
 end
 
 # ╔═╡ Cell order:
-# ╠═2c3s5aaa-0660-4d61-bac2-aff30fe8768b
+# ╟─cb72ab24-8107-4fb2-b70f-d381eb80d606
 # ╠═3c395aaa-0660-4d61-bac2-aff30fe8768b
 # ╠═b2775c19-294a-45e4-a106-3bb41e32c8ea
 # ╠═c4f58fe6-b4c6-4e51-80d6-9dc7e2f145ca
