@@ -45,13 +45,13 @@ Get all hadrons and select D-mesons and four classes of charm baryons
 
 # ╔═╡ c571be2b-a084-4f26-a21a-4db542a31f12
 mesons_and_baryons = 
-	filter(p->(p.is_baryon || p.is_meson), api.get_particles() |> collect)
+	filter(p->(p.is_baryon || p.is_meson), api.get_particles() .|> first |> collect)
 
 # ╔═╡ 4eede759-8211-4b56-aa55-5b44d70da07f
 charmed_baryon_names = ["Lambda_c", "Sigma_c", "Xi_c", "Omega_c"]
 
 # ╔═╡ 1db92b99-8dd9-470a-a64e-7aff460cf086
-charmed_hadrons = filter(api.get_particles() |> collect) do p
+charmed_hadrons = filter(api.get_particles() .|> first  |> collect) do p
 	is_D = p.is_meson && (p.name[1] == 'D')
 	is_Bc_v = contains.(Ref(p.name), charmed_baryon_names)
 	is_Bc = !(prod(is_Bc_v .== 0))

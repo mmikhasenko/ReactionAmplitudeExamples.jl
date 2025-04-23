@@ -14,13 +14,12 @@ end
 # ╔═╡ 6310be10-8105-11ef-3396-6de5cb1cb8f5
 md"""
 # Charged multiplicity with PYTHIA8.jl
+
+The notebook demonstrates how to call Pythia8 from Julia.
 """
 
 # ╔═╡ e5f9c9c9-d9a1-4a7c-8052-e70623582768
-theme(:wong2, frame=:box, grid=false, minorticks=true,
-    guidefontvalign=:top, guidefonthalign=:right,
-    xlim=(:auto, :auto),
-    lw=1.2, lab="", colorbar=false)
+theme(:boxed)
 
 # ╔═╡ 130ddef1-06e1-4d7b-bbeb-200d30dfd724
 # ╠═╡ show_logs = false
@@ -38,32 +37,8 @@ pythia << "Beams:eCM = 13000." <<
 # ╔═╡ a8738e1d-9015-423d-aa4a-7beef3adeb23
 mult = Hist1D(binedges=range(-0.5, 500.5, 26));
 
-# ╔═╡ 7cf18783-e511-40c7-b644-1641afaa9796
-# pv = event(pythia)
-
-# ╔═╡ 78a381f2-0f3d-438f-b7cb-a58076b73472
-# let
-# 	pythia |> next || error("next gives false")
-# 	[isFinal(p) for p in pythia |> event]
-# end
-
 # ╔═╡ bf9f9b04-b47b-4cb3-85ed-223c4cdf6eb1
-
-
-# ╔═╡ dd936c1d-a1ac-4161-b778-b7007ae081bf
-begin
-	list_of_particles = event(pythia)
-	# 
-	count(p->id(p)==2212, list_of_particles) # works
-	filter(p->id(p)==2212, list_of_particles) # fails
-	# map(p->id(p)==2212, list_of_particles) # fails
-end
-
-# ╔═╡ 106d6be7-ed7a-4f3d-b892-6c494d1149d4
-map(p->id(p)==2212, list_of_particles)
-
-# ╔═╡ e13809dd-a694-4273-86e7-7af70184b114
-isFinal(list_of_particles[1000])
+list_of_particles = particles(event(pythia))[];
 
 # ╔═╡ 136b6c5d-2c74-4002-b4b2-5071b6ed1ffc
 # ╠═╡ show_logs = false
@@ -76,7 +51,8 @@ for iEvent in 1:200
 end
 
 # ╔═╡ e7547330-2d9a-481b-8c51-9f7ac552d4e0
-plot(mult, seriestype=:stepbins, size=(600,300), fill=0, c=2, lc=1, xlab="#particles", ylab="counts")
+plot(mult, seriestype=:stepbins, size=(600,300),
+	fill=0, c=2, lc=1, xlab="#particles", ylab="counts")
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1361,12 +1337,7 @@ version = "1.4.1+2"
 # ╠═130ddef1-06e1-4d7b-bbeb-200d30dfd724
 # ╠═c7219755-08df-43b1-bdda-fbb89e5697f9
 # ╠═a8738e1d-9015-423d-aa4a-7beef3adeb23
-# ╠═7cf18783-e511-40c7-b644-1641afaa9796
-# ╠═78a381f2-0f3d-438f-b7cb-a58076b73472
 # ╠═bf9f9b04-b47b-4cb3-85ed-223c4cdf6eb1
-# ╠═dd936c1d-a1ac-4161-b778-b7007ae081bf
-# ╠═106d6be7-ed7a-4f3d-b892-6c494d1149d4
-# ╠═e13809dd-a694-4273-86e7-7af70184b114
 # ╠═136b6c5d-2c74-4002-b4b2-5071b6ed1ffc
 # ╠═e7547330-2d9a-481b-8c51-9f7ac552d4e0
 # ╟─00000000-0000-0000-0000-000000000001
