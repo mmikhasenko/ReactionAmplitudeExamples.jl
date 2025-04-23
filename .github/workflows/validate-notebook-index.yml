@@ -1,0 +1,35 @@
+name: Validate Notebook Links in README
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "README.md" # Source of truth for links
+      - "notebooks/**.jl" # Files being linked
+      - "services/validate_notebook_index.jl" # The validation script itself
+  pull_request:
+    branches: [main]
+    paths:
+      - "README.md"
+      - "notebooks/**.jl"
+      - "services/validate_notebook_index.jl"
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  validate-readme-links:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Julia
+        uses: julia-actions/setup-julia@v1
+        with:
+          version: "1.9" # Or your desired Julia version
+
+      # check if all notebooks are listed in the README file
+      - name: Run README link validation
+        run: |
+          chmod +x services/validate_notebook_index.jl
+          julia services/validate_notebook_index.jl
