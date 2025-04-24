@@ -104,7 +104,7 @@ function extend_itemized_list(notebooks, html_template)
     for (i, notebook) in enumerate(notebooks)
         println("[$i/$(length(notebooks))] Processing $notebook...")
         notebook_html = replace(notebook, ".jl" => ".html")
-        index = build_index_structure(read(joinpath(@__DIR__, notebook), String))
+        index = build_index_structure(read(notebook, String))
 
         # Extract titles and subtitles from the index
         if length(index) == 0
@@ -166,15 +166,14 @@ function generate_index_html()
     println("\n=== Notebook Index Generator ===")
 
     # Verify we're in the notebooks directory
-    notebooks_dir = "notebooks"
-    @assert splitpath(@__DIR__)[end] == notebooks_dir "Script must be run from notebooks directory"
-    println("Working directory: $(@__DIR__)")
+    notebooks_dir = joinpath(@__DIR__, "..", "notebooks")
+    isdir(notebooks_dir) || error("Notebooks directory not found: $notebooks_dir")
 
     # Get all Pluto notebooks
     try
         println("\nScanning for Pluto notebooks...")
-        files = readdir(@__DIR__)
-        notebooks = filter(f -> is_pluto_notebook(joinpath(@__DIR__, f)), files)
+        files = readdir(notebooks_dir)
+        notebooks = filter(f -> is_pluto_notebook(joinpath(notebooks_dir, f)), files)
 
         if isempty(notebooks)
             @warn "No Pluto notebooks found in directory"
@@ -184,14 +183,13 @@ function generate_index_html()
 
         # Generate the base HTML template
         println("\nGenerating HTML template...")
-        foldername = last(splitpath(pwd()))
         html_template = """
         <!DOCTYPE html>
         <html lang="en">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>$(foldername)</title>
+            <title>$(notebooks_dir)</title>
             <link rel="stylesheet" href="styles.css">
             <style>
                 body {
@@ -383,7 +381,7 @@ function generate_index_html()
         """
 
         # Generate and write the index
-        extended_html = extend_itemized_list(notebooks, html_template)
+        extended_html = extend_itemized_list(joinpath.(notebooks_dir, notebooks), html_template)
         output_path = joinpath(@__DIR__, "..", "index.html")
         write(output_path, extended_html)
         println("\n✓ Successfully generated index at $output_path")
