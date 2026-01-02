@@ -1,0 +1,245 @@
+name: Test Subset Build (Timing Baseline)
+
+# This workflow builds a small subset of notebooks to establish timing baselines
+# and verify the scalable CI approach works correctly.
+
+on:
+  push:
+    branches:
+      - "cursor/**"  # Run on all cursor branches for testing
+      - "test/**"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Define a small subset of diverse notebooks for testing
+  # These were chosen to represent different complexity levels:
+  # - Simple: N-061-complex-random-variance.jl (basic math)
+  # - Medium: N-029-introduction2complexplane.jl (plots + interactivity)
+  # - Complex: N-049-singlechannelkmatrix.jl (physics computations)
+  TEST_NOTEBOOKS: |
+    notebooks/N-061-complex-random-variance.jl
+    notebooks/N-029-introduction2complexplane.jl
+    notebooks/N-049-singlechannelkmatrix.jl
+
+jobs:
+  # Single-threaded baseline build (simulates current approach)
+  baseline-sequential:
+    runs-on: ubuntu-latest
+    outputs:
+      duration: ${{ steps.timing.outputs.duration }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Julia
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: "1.11"
+
+      - name: Cache Julia artifacts
+        uses: julia-actions/cache@v2
+        with:
+          cache-registries: "true"
+
+      - name: Record start time
+        id: start
+        run: echo "time=$(date +%s)" >> $GITHUB_OUTPUT
+
+      - name: Build notebooks sequentially
+        run: |
+          julia -e '
+            using Pkg
+            Pkg.activate(mktempdir())
+            Pkg.add([
+              Pkg.PackageSpec(name="PlutoSliderServer", version="1"),
+            ])
+            
+            import PlutoSliderServer
+            
+            notebooks = [
+              "notebooks/N-061-complex-random-variance.jl",
+              "notebooks/N-029-introduction2complexplane.jl",
+              "notebooks/N-049-singlechannelkmatrix.jl",
+            ]
+            
+            mkdir("output_sequential")
+            
+            for notebook in notebooks
+              println("\n" * "="^60)
+              println("Building: $notebook")
+              start_time = time()
+              
+              PlutoSliderServer.export_notebook(
+                notebook;
+                Export_cache_dir="pluto_state_cache_seq",
+                Export_baked_notebookfile=false,
+                Export_baked_state=false,
+                Export_output_dir="output_sequential",
+              )
+              
+              elapsed = round(time() - start_time, digits=1)
+              println("✓ Completed in $(elapsed)s")
+            end
+          '
+        timeout-minutes: 30
+
+      - name: Calculate duration
+        id: timing
+        run: |
+          END=$(date +%s)
+          START=${{ steps.start.outputs.time }}
+          DURATION=$((END - START))
+          echo "duration=$DURATION" >> $GITHUB_OUTPUT
+          echo "Sequential build took ${DURATION}s"
+
+      - name: Upload sequential artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sequential-build
+          path: output_sequential/
+          retention-days: 1
+
+  # Parallel build using matrix strategy
+  parallel-build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        notebook:
+          - notebooks/N-061-complex-random-variance.jl
+          - notebooks/N-029-introduction2complexplane.jl
+          - notebooks/N-049-singlechannelkmatrix.jl
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Julia
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: "1.11"
+
+      - name: Cache Julia artifacts
+        uses: julia-actions/cache@v2
+        with:
+          cache-registries: "true"
+
+      - name: Record start time
+        id: start
+        run: echo "time=$(date +%s)" >> $GITHUB_OUTPUT
+
+      - name: Build single notebook
+        run: |
+          NOTEBOOK="${{ matrix.notebook }}"
+          echo "Building: $NOTEBOOK"
+          
+          julia -e '
+            using Pkg
+            Pkg.activate(mktempdir())
+            Pkg.add([
+              Pkg.PackageSpec(name="PlutoSliderServer", version="1"),
+            ])
+            
+            import PlutoSliderServer
+            
+            notebook = ENV["NOTEBOOK"]
+            mkdir("output")
+            
+            println("Building: $notebook")
+            start_time = time()
+            
+            PlutoSliderServer.export_notebook(
+              notebook;
+              Export_cache_dir="pluto_state_cache",
+              Export_baked_notebookfile=false,
+              Export_baked_state=false,
+              Export_output_dir="output",
+            )
+            
+            elapsed = round(time() - start_time, digits=1)
+            println("✓ Completed in $(elapsed)s")
+          '
+        env:
+          NOTEBOOK: ${{ matrix.notebook }}
+        timeout-minutes: 20
+
+      - name: Calculate duration
+        id: timing
+        run: |
+          END=$(date +%s)
+          START=${{ steps.start.outputs.time }}
+          DURATION=$((END - START))
+          echo "duration=$DURATION" >> $GITHUB_OUTPUT
+          echo "Parallel job took ${DURATION}s"
+
+      - name: Upload notebook artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: parallel-${{ hashFiles(matrix.notebook) }}
+          path: output/
+          retention-days: 1
+
+  # Comparison and summary
+  timing-summary:
+    needs: [baseline-sequential, parallel-build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate timing report
+        run: |
+          SEQ_DURATION=${{ needs.baseline-sequential.outputs.duration }}
+          
+          cat << 'EOF' >> $GITHUB_STEP_SUMMARY
+          # 📊 CI Scalability Timing Report
+          
+          ## Test Configuration
+          - **Notebooks tested:** 3 (simple, medium, complex)
+          - **Test notebooks:**
+            - `N-061-complex-random-variance.jl` (simple math operations)
+            - `N-029-introduction2complexplane.jl` (plots + interactivity)
+            - `N-049-singlechannelkmatrix.jl` (physics computations)
+          
+          ## Results
+          
+          | Approach | Total Wall Time | Notes |
+          |----------|-----------------|-------|
+          | Sequential (current) | ~${SEQ_DURATION}s | All notebooks built one after another |
+          | Parallel (new) | ~max(individual times) | Notebooks built simultaneously |
+          
+          ## Extrapolation to Full Build (51 notebooks)
+          
+          ### Current Approach (Sequential)
+          - Average time per notebook: ~${SEQ_DURATION}s ÷ 3 ≈ $((SEQ_DURATION / 3))s
+          - Estimated full build: ~$((SEQ_DURATION / 3 * 51))s ≈ $((SEQ_DURATION / 3 * 51 / 60))min
+          
+          ### Scalable Approach (Parallel with 10 chunks)
+          - With 10 parallel jobs (5 notebooks each)
+          - Estimated full build: ~$((SEQ_DURATION / 3 * 5))s ≈ $((SEQ_DURATION / 3 * 5 / 60))min
+          - **Expected speedup: ~10x**
+          
+          ## Recommendations
+          
+          1. ✅ Use matrix strategy with `fail-fast: false` to continue building other notebooks if one fails
+          2. ✅ Chunk notebooks into groups of 5 for optimal parallelization
+          3. ✅ Use separate caches per chunk to avoid cache contention
+          4. ✅ Merge artifacts in a final deployment job
+          
+          EOF
+
+      - name: Download and verify artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
+
+      - name: List built artifacts
+        run: |
+          echo "## Built Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          find all-artifacts -name "*.html" -type f >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

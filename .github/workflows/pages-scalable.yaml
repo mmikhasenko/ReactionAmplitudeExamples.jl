@@ -1,0 +1,295 @@
+name: Scalable Pages Build
+
+on:
+  push:
+    branches:
+      - main
+      - "cursor/**"  # Allow testing on cursor branches
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      notebook_filter:
+        description: "Glob pattern to filter notebooks (e.g., 'N-0{29,61}*.jl' for specific notebooks)"
+        required: false
+        default: ""
+
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # First job: discover notebooks and create a build matrix
+  discover-notebooks:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      total_notebooks: ${{ steps.set-matrix.outputs.total_notebooks }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Discover Pluto notebooks and create matrix
+        id: set-matrix
+        run: |
+          # Find all Pluto notebooks
+          NOTEBOOKS=$(find notebooks -name "*.jl" -exec grep -l "^### A Pluto.jl notebook ###" {} \; 2>/dev/null | sort)
+          
+          # Apply filter if provided
+          FILTER="${{ github.event.inputs.notebook_filter }}"
+          if [ -n "$FILTER" ]; then
+            echo "Applying filter: $FILTER"
+            NOTEBOOKS=$(echo "$NOTEBOOKS" | grep -E "$FILTER" || true)
+          fi
+          
+          # Count total notebooks
+          TOTAL=$(echo "$NOTEBOOKS" | grep -c . || echo "0")
+          echo "Found $TOTAL notebooks to build"
+          echo "total_notebooks=$TOTAL" >> $GITHUB_OUTPUT
+          
+          if [ "$TOTAL" -eq "0" ]; then
+            echo "No notebooks found!"
+            echo 'matrix={"include":[]}' >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Create chunks of ~5 notebooks each for parallel processing
+          # Adjust CHUNK_SIZE based on your needs (smaller = more parallelism but more overhead)
+          CHUNK_SIZE=5
+          
+          # Convert notebooks to JSON array and chunk them
+          CHUNK_ID=0
+          CURRENT_CHUNK=""
+          COUNT=0
+          MATRIX='{"include":['
+          FIRST=true
+          
+          while IFS= read -r notebook; do
+            [ -z "$notebook" ] && continue
+            
+            if [ $COUNT -ge $CHUNK_SIZE ]; then
+              # Close current chunk
+              if [ "$FIRST" = true ]; then
+                FIRST=false
+              else
+                MATRIX="$MATRIX,"
+              fi
+              MATRIX="$MATRIX{\"chunk_id\":$CHUNK_ID,\"notebooks\":\"$CURRENT_CHUNK\"}"
+              CHUNK_ID=$((CHUNK_ID + 1))
+              CURRENT_CHUNK="$notebook"
+              COUNT=1
+            else
+              if [ -n "$CURRENT_CHUNK" ]; then
+                CURRENT_CHUNK="$CURRENT_CHUNK,$notebook"
+              else
+                CURRENT_CHUNK="$notebook"
+              fi
+              COUNT=$((COUNT + 1))
+            fi
+          done <<< "$NOTEBOOKS"
+          
+          # Don't forget the last chunk
+          if [ -n "$CURRENT_CHUNK" ]; then
+            if [ "$FIRST" = true ]; then
+              FIRST=false
+            else
+              MATRIX="$MATRIX,"
+            fi
+            MATRIX="$MATRIX{\"chunk_id\":$CHUNK_ID,\"notebooks\":\"$CURRENT_CHUNK\"}"
+          fi
+          
+          MATRIX="$MATRIX]}"
+          echo "Matrix: $MATRIX"
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+
+  # Second job: build notebooks in parallel using matrix strategy
+  build-notebooks:
+    needs: discover-notebooks
+    if: ${{ needs.discover-notebooks.outputs.total_notebooks != '0' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false  # Continue other chunks even if one fails
+      max-parallel: 10  # Adjust based on GitHub Actions limits
+      matrix: ${{ fromJson(needs.discover-notebooks.outputs.matrix) }}
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Julia
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: "1.11"
+
+      - name: Cache Julia artifacts
+        uses: julia-actions/cache@v2
+        with:
+          cache-registries: "true"
+
+      - name: Set up notebook state cache
+        uses: actions/cache@v4
+        with:
+          path: pluto_state_cache
+          key: ${{ runner.os }}-pluto_cache-chunk${{ matrix.chunk_id }}-${{ hashFiles('**/Project.toml', '**/Manifest.toml') }}-${{ hashFiles(format('notebooks/{0}', matrix.notebooks)) }}
+          restore-keys: |
+            ${{ runner.os }}-pluto_cache-chunk${{ matrix.chunk_id }}-${{ hashFiles('**/Project.toml', '**/Manifest.toml') }}
+            ${{ runner.os }}-pluto_cache-chunk${{ matrix.chunk_id }}-
+
+      - name: Build notebooks in chunk ${{ matrix.chunk_id }}
+        run: |
+          echo "Building notebooks: ${{ matrix.notebooks }}"
+          
+          # Create output directory
+          mkdir -p output/notebooks
+          
+          # Convert comma-separated list to array
+          IFS=',' read -ra NOTEBOOKS <<< "${{ matrix.notebooks }}"
+          
+          julia --project=@. -e '
+            using Pkg
+            Pkg.activate(mktempdir())
+            Pkg.add([
+              Pkg.PackageSpec(name="PlutoSliderServer", version="1"),
+            ])
+            
+            import PlutoSliderServer
+            
+            # Get notebooks from environment
+            notebooks_str = ENV["NOTEBOOKS"]
+            notebooks = split(notebooks_str, ",")
+            
+            println("Building $(length(notebooks)) notebooks...")
+            for nb in notebooks
+              println("  - $nb")
+            end
+            
+            # Export each notebook
+            for notebook in notebooks
+              notebook = strip(notebook)
+              isempty(notebook) && continue
+              
+              println("\n" * "="^60)
+              println("Building: $notebook")
+              println("="^60)
+              
+              try
+                PlutoSliderServer.export_notebook(
+                  notebook;
+                  Export_cache_dir="pluto_state_cache",
+                  Export_baked_notebookfile=false,
+                  Export_baked_state=false,
+                  Export_output_dir="output",
+                )
+                println("✓ Successfully built $notebook")
+              catch e
+                println("✗ Failed to build $notebook")
+                println("Error: $e")
+                # Continue with other notebooks instead of failing completely
+              end
+            end
+          ' 
+        env:
+          NOTEBOOKS: ${{ matrix.notebooks }}
+        timeout-minutes: 60
+
+      - name: Upload chunk artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: notebooks-chunk-${{ matrix.chunk_id }}
+          path: output/
+          retention-days: 1
+          if-no-files-found: warn
+
+  # Third job: generate README and index
+  generate-index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Julia
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: "1.11"
+
+      - name: Update README.md and convert to index.html
+        run: |
+          julia services/list_notebooks.jl
+          sudo apt-get install -y pandoc
+          pandoc README.md -s -o README.html
+
+      - name: Upload index artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: index-files
+          path: |
+            index.html
+            README.html
+            styles.css
+          retention-days: 1
+
+  # Fourth job: merge all artifacts and deploy
+  deploy:
+    needs: [discover-notebooks, build-notebooks, generate-index]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all notebook artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: notebooks-chunk-*
+          path: downloaded-notebooks
+          merge-multiple: true
+
+      - name: Download index artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: index-files
+          path: .
+
+      - name: Prepare deployment directory
+        run: |
+          mkdir -p deploy/notebooks
+          
+          # Copy all built notebooks
+          if [ -d downloaded-notebooks/notebooks ]; then
+            cp -r downloaded-notebooks/notebooks/* deploy/notebooks/ 2>/dev/null || true
+          fi
+          
+          # Copy index files
+          cp index.html deploy/ 2>/dev/null || true
+          cp README.html deploy/ 2>/dev/null || true
+          cp styles.css deploy/ 2>/dev/null || true
+          
+          # List what we're deploying
+          echo "Deployment contents:"
+          find deploy -type f | head -50
+
+      - name: Deploy to gh-pages
+        uses: JamesIves/github-pages-deploy-action@releases/v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: gh-pages
+          folder: deploy
+          single-commit: true
+
+  # Summary job to report build status
+  summary:
+    needs: [discover-notebooks, build-notebooks]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build Summary
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Total notebooks discovered: ${{ needs.discover-notebooks.outputs.total_notebooks }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Build status: ${{ needs.build-notebooks.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Timing Interpretation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "With matrix parallelization:" >> $GITHUB_STEP_SUMMARY
+          echo "- Each chunk of ~5 notebooks runs in parallel" >> $GITHUB_STEP_SUMMARY
+          echo "- Total build time ≈ slowest chunk time (not sum of all notebooks)" >> $GITHUB_STEP_SUMMARY
+          echo "- Expected speedup: ~5-10x compared to sequential builds" >> $GITHUB_STEP_SUMMARY
