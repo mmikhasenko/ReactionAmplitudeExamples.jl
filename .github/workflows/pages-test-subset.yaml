@@ -2,6 +2,16 @@ name: Test Subset Build (Timing Baseline)
 
 # This workflow builds a small subset of notebooks to establish timing baselines
 # and verify the scalable CI approach works correctly.
+# 
+# KEY INSIGHT: Most of the build time comes from:
+# 1. Julia startup + package loading (~30s per session)
+# 2. Package precompilation on cache miss (~60-90s)
+# 3. Individual notebook execution (~30-120s each)
+#
+# Solution: 
+# - Warm up cache ONCE before parallel jobs
+# - Run multiple notebooks per Julia session
+# - Use stable cache keys that don't change with notebook content
 
 on:
   push:
@@ -13,233 +23,379 @@ on:
       - main
   workflow_dispatch:
 
-# Cancel in-progress runs for the same branch
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  # Define a small subset of diverse notebooks for testing
-  # These were chosen to represent different complexity levels:
-  # - Simple: N-061-complex-random-variance.jl (basic math)
-  # - Medium: N-029-introduction2complexplane.jl (plots + interactivity)
-  # - Complex: N-049-singlechannelkmatrix.jl (physics computations)
-  TEST_NOTEBOOKS: |
-    notebooks/N-061-complex-random-variance.jl
-    notebooks/N-029-introduction2complexplane.jl
-    notebooks/N-049-singlechannelkmatrix.jl
+  JULIA_VERSION: "1.11"
+  PLUTO_SLIDER_SERVER_VERSION: "1"
+  # Test notebooks chosen for diversity:
+  # - Simple: N-061 (basic math)
+  # - Medium: N-029 (plots + interactivity)  
+  # - Complex: N-049 (physics computations)
+  TEST_NOTEBOOKS: "notebooks/N-061-complex-random-variance.jl,notebooks/N-029-introduction2complexplane.jl,notebooks/N-049-singlechannelkmatrix.jl"
 
 jobs:
-  # Single-threaded baseline build (simulates current approach)
-  baseline-sequential:
+  # Warm up the Julia package cache (shared by all subsequent jobs)
+  warmup-cache:
     runs-on: ubuntu-latest
     outputs:
-      duration: ${{ steps.timing.outputs.duration }}
+      cache-hit: ${{ steps.cache.outputs.cache-hit }}
+      warmup-time: ${{ steps.timing.outputs.warmup_time }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Julia
         uses: julia-actions/setup-julia@v2
         with:
-          version: "1.11"
-
-      - name: Cache Julia artifacts
-        uses: julia-actions/cache@v2
-        with:
-          cache-registries: "true"
+          version: ${{ env.JULIA_VERSION }}
 
       - name: Record start time
         id: start
         run: echo "time=$(date +%s)" >> $GITHUB_OUTPUT
 
-      - name: Build notebooks sequentially
+      - name: Cache Julia packages
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.julia/artifacts
+            ~/.julia/packages
+            ~/.julia/registries
+            ~/.julia/compiled
+            ~/.julia/scratchspaces
+          key: julia-packages-${{ runner.os }}-${{ env.JULIA_VERSION }}-pss${{ env.PLUTO_SLIDER_SERVER_VERSION }}-v2
+          restore-keys: |
+            julia-packages-${{ runner.os }}-${{ env.JULIA_VERSION }}-
+
+      - name: Precompile if cache miss
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
+          echo "Cache MISS - precompiling packages..."
           julia -e '
             using Pkg
             Pkg.activate(mktempdir())
-            Pkg.add([
-              Pkg.PackageSpec(name="PlutoSliderServer", version="1"),
-            ])
-            
-            import PlutoSliderServer
-            
-            notebooks = [
-              "notebooks/N-061-complex-random-variance.jl",
-              "notebooks/N-029-introduction2complexplane.jl",
-              "notebooks/N-049-singlechannelkmatrix.jl",
-            ]
-            
-            mkdir("output_sequential")
-            
-            for notebook in notebooks
-              println("\n" * "="^60)
-              println("Building: $notebook")
-              start_time = time()
-              
-              PlutoSliderServer.export_notebook(
-                notebook;
-                Export_cache_dir="pluto_state_cache_seq",
-                Export_baked_notebookfile=false,
-                Export_baked_state=false,
-                Export_output_dir="output_sequential",
-              )
-              
-              elapsed = round(time() - start_time, digits=1)
-              println("✓ Completed in $(elapsed)s")
-            end
+            @time Pkg.add(Pkg.PackageSpec(name="PlutoSliderServer", version="'${{ env.PLUTO_SLIDER_SERVER_VERSION }}'"))
+            @time using PlutoSliderServer
+            println("✓ Precompilation complete")
           '
-        timeout-minutes: 30
 
-      - name: Calculate duration
+      - name: Verify cache (hit case)
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: |
+          echo "Cache HIT - packages already precompiled"
+          du -sh ~/.julia/packages ~/.julia/compiled 2>/dev/null || true
+
+      - name: Calculate warmup time
         id: timing
         run: |
           END=$(date +%s)
           START=${{ steps.start.outputs.time }}
           DURATION=$((END - START))
-          echo "duration=$DURATION" >> $GITHUB_OUTPUT
-          echo "Sequential build took ${DURATION}s"
+          echo "warmup_time=$DURATION" >> $GITHUB_OUTPUT
+          echo "Warmup took ${DURATION}s (cache hit: ${{ steps.cache.outputs.cache-hit }})"
 
-      - name: Upload sequential artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: sequential-build
-          path: output_sequential/
-          retention-days: 1
-
-  # Parallel build using matrix strategy
-  parallel-build:
+  # BASELINE: Sequential build (simulates old approach overhead)
+  baseline-sequential:
+    needs: warmup-cache
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        notebook:
-          - notebooks/N-061-complex-random-variance.jl
-          - notebooks/N-029-introduction2complexplane.jl
-          - notebooks/N-049-singlechannelkmatrix.jl
-    
+    outputs:
+      total_time: ${{ steps.timing.outputs.total_time }}
+      load_time: ${{ steps.timing.outputs.load_time }}
+      build_time: ${{ steps.timing.outputs.build_time }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Julia
         uses: julia-actions/setup-julia@v2
         with:
-          version: "1.11"
+          version: ${{ env.JULIA_VERSION }}
 
-      - name: Cache Julia artifacts
-        uses: julia-actions/cache@v2
+      - name: Restore Julia packages
+        uses: actions/cache/restore@v4
         with:
-          cache-registries: "true"
+          path: |
+            ~/.julia/artifacts
+            ~/.julia/packages
+            ~/.julia/registries
+            ~/.julia/compiled
+            ~/.julia/scratchspaces
+          key: julia-packages-${{ runner.os }}-${{ env.JULIA_VERSION }}-pss${{ env.PLUTO_SLIDER_SERVER_VERSION }}-v2
 
       - name: Record start time
         id: start
         run: echo "time=$(date +%s)" >> $GITHUB_OUTPUT
 
-      - name: Build single notebook
+      - name: Build notebooks in SINGLE session
+        id: build
         run: |
-          NOTEBOOK="${{ matrix.notebook }}"
-          echo "Building: $NOTEBOOK"
-          
           julia -e '
+            overall_start = time()
+            
             using Pkg
             Pkg.activate(mktempdir())
-            Pkg.add([
-              Pkg.PackageSpec(name="PlutoSliderServer", version="1"),
-            ])
             
+            println("Loading PlutoSliderServer...")
+            load_start = time()
+            Pkg.add(Pkg.PackageSpec(name="PlutoSliderServer", version="'${{ env.PLUTO_SLIDER_SERVER_VERSION }}'"); io=devnull)
             import PlutoSliderServer
+            load_time = time() - load_start
+            println("  Package load time: $(round(load_time, digits=1))s")
             
-            notebook = ENV["NOTEBOOK"]
+            # Save load time for reporting
+            open(ENV["GITHUB_OUTPUT"], "a") do io
+              println(io, "load_time=$(round(Int, load_time))")
+            end
+            
+            notebooks = split(ENV["TEST_NOTEBOOKS"], ",")
             mkdir("output")
             
-            println("Building: $notebook")
-            start_time = time()
+            build_start = time()
+            for (i, nb) in enumerate(notebooks)
+              nb = strip(nb)
+              println("\n[$i/$(length(notebooks))] Building: $nb")
+              nb_start = time()
+              PlutoSliderServer.export_notebook(
+                nb;
+                Export_cache_dir="cache",
+                Export_baked_notebookfile=false,
+                Export_baked_state=false,
+                Export_output_dir="output",
+              )
+              println("  ✓ $(round(time() - nb_start, digits=1))s")
+            end
+            build_time = time() - build_start
             
-            PlutoSliderServer.export_notebook(
-              notebook;
-              Export_cache_dir="pluto_state_cache",
-              Export_baked_notebookfile=false,
-              Export_baked_state=false,
-              Export_output_dir="output",
-            )
+            open(ENV["GITHUB_OUTPUT"], "a") do io
+              println(io, "build_time=$(round(Int, build_time))")
+            end
             
-            elapsed = round(time() - start_time, digits=1)
-            println("✓ Completed in $(elapsed)s")
+            println("\n" * "="^50)
+            println("SEQUENTIAL TIMING SUMMARY")
+            println("="^50)
+            println("Package load: $(round(load_time, digits=1))s")
+            println("Notebook builds: $(round(build_time, digits=1))s")
+            println("Total: $(round(time() - overall_start, digits=1))s")
           '
         env:
-          NOTEBOOK: ${{ matrix.notebook }}
+          TEST_NOTEBOOKS: ${{ env.TEST_NOTEBOOKS }}
         timeout-minutes: 20
 
-      - name: Calculate duration
+      - name: Calculate total time
         id: timing
         run: |
           END=$(date +%s)
           START=${{ steps.start.outputs.time }}
-          DURATION=$((END - START))
-          echo "duration=$DURATION" >> $GITHUB_OUTPUT
-          echo "Parallel job took ${DURATION}s"
+          TOTAL=$((END - START))
+          echo "total_time=$TOTAL" >> $GITHUB_OUTPUT
+          # Pass through the Julia-measured times
+          echo "load_time=${{ steps.build.outputs.load_time }}" >> $GITHUB_OUTPUT
+          echo "build_time=${{ steps.build.outputs.build_time }}" >> $GITHUB_OUTPUT
 
-      - name: Upload notebook artifact
-        uses: actions/upload-artifact@v4
+  # NEW APPROACH: Parallel builds (each notebook in separate job)
+  parallel-notebook-1:
+    needs: warmup-cache
+    runs-on: ubuntu-latest
+    outputs:
+      time: ${{ steps.timing.outputs.time }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
         with:
-          name: parallel-${{ hashFiles(matrix.notebook) }}
-          path: output/
-          retention-days: 1
+          version: ${{ env.JULIA_VERSION }}
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.julia/artifacts
+            ~/.julia/packages
+            ~/.julia/registries
+            ~/.julia/compiled
+            ~/.julia/scratchspaces
+          key: julia-packages-${{ runner.os }}-${{ env.JULIA_VERSION }}-pss${{ env.PLUTO_SLIDER_SERVER_VERSION }}-v2
+      - id: start
+        run: echo "time=$(date +%s)" >> $GITHUB_OUTPUT
+      - name: Build N-061 (simple)
+        run: |
+          julia -e '
+            using Pkg; Pkg.activate(mktempdir())
+            Pkg.add(Pkg.PackageSpec(name="PlutoSliderServer", version="'${{ env.PLUTO_SLIDER_SERVER_VERSION }}'"); io=devnull)
+            import PlutoSliderServer
+            mkdir("output")
+            PlutoSliderServer.export_notebook("notebooks/N-061-complex-random-variance.jl";
+              Export_cache_dir="cache", Export_baked_notebookfile=false, Export_baked_state=false, Export_output_dir="output")
+          '
+        timeout-minutes: 10
+      - id: timing
+        run: |
+          END=$(date +%s); START=${{ steps.start.outputs.time }}
+          echo "time=$((END - START))" >> $GITHUB_OUTPUT
 
-  # Comparison and summary
-  timing-summary:
-    needs: [baseline-sequential, parallel-build]
+  parallel-notebook-2:
+    needs: warmup-cache
+    runs-on: ubuntu-latest
+    outputs:
+      time: ${{ steps.timing.outputs.time }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ env.JULIA_VERSION }}
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.julia/artifacts
+            ~/.julia/packages
+            ~/.julia/registries
+            ~/.julia/compiled
+            ~/.julia/scratchspaces
+          key: julia-packages-${{ runner.os }}-${{ env.JULIA_VERSION }}-pss${{ env.PLUTO_SLIDER_SERVER_VERSION }}-v2
+      - id: start
+        run: echo "time=$(date +%s)" >> $GITHUB_OUTPUT
+      - name: Build N-029 (medium)
+        run: |
+          julia -e '
+            using Pkg; Pkg.activate(mktempdir())
+            Pkg.add(Pkg.PackageSpec(name="PlutoSliderServer", version="'${{ env.PLUTO_SLIDER_SERVER_VERSION }}'"); io=devnull)
+            import PlutoSliderServer
+            mkdir("output")
+            PlutoSliderServer.export_notebook("notebooks/N-029-introduction2complexplane.jl";
+              Export_cache_dir="cache", Export_baked_notebookfile=false, Export_baked_state=false, Export_output_dir="output")
+          '
+        timeout-minutes: 15
+      - id: timing
+        run: |
+          END=$(date +%s); START=${{ steps.start.outputs.time }}
+          echo "time=$((END - START))" >> $GITHUB_OUTPUT
+
+  parallel-notebook-3:
+    needs: warmup-cache
+    runs-on: ubuntu-latest
+    outputs:
+      time: ${{ steps.timing.outputs.time }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ env.JULIA_VERSION }}
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.julia/artifacts
+            ~/.julia/packages
+            ~/.julia/registries
+            ~/.julia/compiled
+            ~/.julia/scratchspaces
+          key: julia-packages-${{ runner.os }}-${{ env.JULIA_VERSION }}-pss${{ env.PLUTO_SLIDER_SERVER_VERSION }}-v2
+      - id: start
+        run: echo "time=$(date +%s)" >> $GITHUB_OUTPUT
+      - name: Build N-049 (complex)
+        run: |
+          julia -e '
+            using Pkg; Pkg.activate(mktempdir())
+            Pkg.add(Pkg.PackageSpec(name="PlutoSliderServer", version="'${{ env.PLUTO_SLIDER_SERVER_VERSION }}'"); io=devnull)
+            import PlutoSliderServer
+            mkdir("output")
+            PlutoSliderServer.export_notebook("notebooks/N-049-singlechannelkmatrix.jl";
+              Export_cache_dir="cache", Export_baked_notebookfile=false, Export_baked_state=false, Export_output_dir="output")
+          '
+        timeout-minutes: 15
+      - id: timing
+        run: |
+          END=$(date +%s); START=${{ steps.start.outputs.time }}
+          echo "time=$((END - START))" >> $GITHUB_OUTPUT
+
+  # Generate detailed timing report
+  timing-report:
+    needs: [warmup-cache, baseline-sequential, parallel-notebook-1, parallel-notebook-2, parallel-notebook-3]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Generate timing report
+      - name: Generate comprehensive timing report
         run: |
-          SEQ_DURATION=${{ needs.baseline-sequential.outputs.duration }}
+          # Calculate values
+          WARMUP=${{ needs.warmup-cache.outputs.warmup-time }}
+          CACHE_HIT="${{ needs.warmup-cache.outputs.cache-hit }}"
           
-          cat << 'EOF' >> $GITHUB_STEP_SUMMARY
+          SEQ_TOTAL=${{ needs.baseline-sequential.outputs.total_time }}
+          SEQ_LOAD=${{ needs.baseline-sequential.outputs.load_time }}
+          SEQ_BUILD=${{ needs.baseline-sequential.outputs.build_time }}
+          
+          P1=${{ needs.parallel-notebook-1.outputs.time }}
+          P2=${{ needs.parallel-notebook-2.outputs.time }}
+          P3=${{ needs.parallel-notebook-3.outputs.time }}
+          
+          # Find max parallel time (wall clock for parallel execution)
+          PARALLEL_MAX=$(echo -e "$P1\n$P2\n$P3" | sort -rn | head -1)
+          PARALLEL_SUM=$((P1 + P2 + P3))
+          
+          # Extrapolate to 51 notebooks
+          AVG_BUILD=$((SEQ_BUILD / 3))
+          
+          cat << EOF >> $GITHUB_STEP_SUMMARY
           # 📊 CI Scalability Timing Report
           
           ## Test Configuration
-          - **Notebooks tested:** 3 (simple, medium, complex)
-          - **Test notebooks:**
-            - `N-061-complex-random-variance.jl` (simple math operations)
-            - `N-029-introduction2complexplane.jl` (plots + interactivity)
-            - `N-049-singlechannelkmatrix.jl` (physics computations)
+          | Parameter | Value |
+          |-----------|-------|
+          | Julia version | ${{ env.JULIA_VERSION }} |
+          | PlutoSliderServer | v${{ env.PLUTO_SLIDER_SERVER_VERSION }} |
+          | Test notebooks | 3 (simple, medium, complex) |
+          | Cache hit | ${CACHE_HIT} |
           
-          ## Results
+          ## Timing Breakdown
           
-          | Approach | Total Wall Time | Notes |
-          |----------|-----------------|-------|
-          | Sequential (current) | ~${SEQ_DURATION}s | All notebooks built one after another |
-          | Parallel (new) | ~max(individual times) | Notebooks built simultaneously |
+          ### Warmup Phase (runs once)
+          | Metric | Time |
+          |--------|------|
+          | Cache restore + precompile | ${WARMUP}s |
           
-          ## Extrapolation to Full Build (51 notebooks)
+          ### Sequential Build (single Julia session)
+          | Metric | Time |
+          |--------|------|
+          | Package loading | ${SEQ_LOAD}s |
+          | Notebook execution (3 notebooks) | ${SEQ_BUILD}s |
+          | **Total wall time** | **${SEQ_TOTAL}s** |
           
-          ### Current Approach (Sequential)
-          - Average time per notebook: ~${SEQ_DURATION}s ÷ 3 ≈ $((SEQ_DURATION / 3))s
-          - Estimated full build: ~$((SEQ_DURATION / 3 * 51))s ≈ $((SEQ_DURATION / 3 * 51 / 60))min
+          ### Parallel Build (3 separate Julia sessions)
+          | Notebook | Time | Notes |
+          |----------|------|-------|
+          | N-061 (simple) | ${P1}s | Basic math |
+          | N-029 (medium) | ${P2}s | Plots + interactivity |
+          | N-049 (complex) | ${P3}s | Physics computations |
+          | **Wall time (max)** | **${PARALLEL_MAX}s** | Parallel execution |
+          | Sum of times | ${PARALLEL_SUM}s | If sequential |
           
-          ### Scalable Approach (Parallel with 10 chunks)
-          - With 10 parallel jobs (5 notebooks each)
-          - Estimated full build: ~$((SEQ_DURATION / 3 * 5))s ≈ $((SEQ_DURATION / 3 * 5 / 60))min
-          - **Expected speedup: ~10x**
+          ## Analysis
+          
+          ### Overhead Breakdown
+          - **Julia startup + package load**: ~${SEQ_LOAD}s per session
+          - **Average notebook build**: ~${AVG_BUILD}s per notebook
+          - **Parallel speedup on 3 notebooks**: ${PARALLEL_SUM}s → ${PARALLEL_MAX}s (~$((PARALLEL_SUM / PARALLEL_MAX))x)
+          
+          ### Extrapolation to 51 Notebooks
+          
+          | Approach | Estimated Time | Calculation |
+          |----------|----------------|-------------|
+          | **Old (all sequential, no cache)** | ~$((51 * (SEQ_LOAD + AVG_BUILD) / 60)) min | 51 × (${SEQ_LOAD}s + ${AVG_BUILD}s) |
+          | **Sequential with cache** | ~$((SEQ_LOAD + 51 * AVG_BUILD) / 60) min | ${SEQ_LOAD}s + 51 × ${AVG_BUILD}s |
+          | **Parallel (10 chunks of 5)** | ~$(((WARMUP + SEQ_LOAD + 5 * AVG_BUILD) / 60)) min | warmup + max(chunk time) |
+          
+          ## Key Insights
+          
+          1. **Package loading is expensive**: ${SEQ_LOAD}s overhead per Julia session
+          2. **Caching works**: When cache hits, warmup is minimal
+          3. **Parallelization helps**: Wall time = max(parallel jobs), not sum
+          4. **Chunking is optimal**: 5 notebooks/chunk balances parallelism vs overhead
           
           ## Recommendations
           
-          1. ✅ Use matrix strategy with `fail-fast: false` to continue building other notebooks if one fails
-          2. ✅ Chunk notebooks into groups of 5 for optimal parallelization
-          3. ✅ Use separate caches per chunk to avoid cache contention
-          4. ✅ Merge artifacts in a final deployment job
+          ✅ **Use stable cache keys** - Don't invalidate on notebook changes  
+          ✅ **Warmup cache first** - Single job precompiles, all chunks reuse  
+          ✅ **Chunk notebooks** - 5 per chunk amortizes Julia startup  
+          ✅ **fail-fast: false** - Don't abort other chunks on single failure  
           
           EOF
 
-      - name: Download and verify artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: all-artifacts
-
-      - name: List built artifacts
-        run: |
-          echo "## Built Artifacts" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          find all-artifacts -name "*.html" -type f >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo ""
+          echo "Report generated! View in GitHub Actions summary."

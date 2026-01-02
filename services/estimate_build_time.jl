@@ -11,6 +11,16 @@ Options:
     
 This script samples a few notebooks, measures their build time, and 
 extrapolates to estimate total build time for sequential vs parallel builds.
+
+KEY INSIGHT: Most CI time comes from:
+1. Julia startup + package loading (~30-60s per session)
+2. Package precompilation on cache miss (~60-90s)
+3. Individual notebook execution (~30-120s each)
+
+Solution implemented in pages-scalable.yaml:
+- Warm up cache ONCE before parallel jobs
+- Run multiple notebooks per Julia session (chunking)
+- Use stable cache keys that don't change with notebook content
 """
 
 using Pkg
