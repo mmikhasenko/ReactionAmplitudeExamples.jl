@@ -154,7 +154,7 @@ jobs:
             
             build_start = time()
             for (i, nb) in enumerate(notebooks)
-              nb = strip(nb)
+              # nb is already stripped and converted to String
               println("\n[$i/$(length(notebooks))] Building: $nb")
               nb_start = time()
               PlutoSliderServer.export_notebook(
