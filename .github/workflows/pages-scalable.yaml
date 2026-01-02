@@ -238,7 +238,8 @@ jobs:
             
             # Get notebooks from environment
             notebooks_str = ENV["NOTEBOOKS"]
-            notebooks = filter(!isempty, strip.(split(notebooks_str, ",")))
+            # Convert SubStrings to Strings (PlutoSliderServer requires String type)
+            notebooks = String.(filter(!isempty, strip.(split(notebooks_str, ","))))
             
             println("\nBuilding $(length(notebooks)) notebooks in this chunk...")
             

@@ -148,7 +148,8 @@ jobs:
               println(io, "load_time=$(round(Int, load_time))")
             end
             
-            notebooks = split(ENV["TEST_NOTEBOOKS"], ",")
+            # Convert SubStrings to Strings (PlutoSliderServer requires String type)
+            notebooks = String.(strip.(split(ENV["TEST_NOTEBOOKS"], ",")))
             mkdir("output")
             
             build_start = time()
