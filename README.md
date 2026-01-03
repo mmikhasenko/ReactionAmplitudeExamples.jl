@@ -89,6 +89,8 @@ Pluto.run() # a new tab will open in the browser
 # navigate to notebook file N-XXX-Cool_stuff.jl
 ```
 
+**Note:** Long-running notebooks in `notebooks/long_running/` are excluded from automatic discovery in CI. When running Pluto locally, they may appear in the file browser but are not processed automatically.
+
 ### Local index
 
 To build and serve a local index page (similar to the GitHub Pages site) for browsing notebooks:
