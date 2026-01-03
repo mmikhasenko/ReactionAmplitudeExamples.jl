@@ -59,7 +59,7 @@ jobs:
       PYTHON: ""
     steps:
       - name: Checkout this repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Install Julia
         uses: julia-actions/setup-julia@v2
@@ -68,7 +68,7 @@ jobs:
 
       # Restore cache (read-only) - warmup job already populated it
       - name: Restore Julia packages from cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: |
             ~/.julia/artifacts
@@ -89,7 +89,7 @@ jobs:
 
       # Notebook state cache - this CAN change when notebooks change
       - name: Set up notebook state cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: pluto_state_cache
           key: ${{ runner.os }}-pluto_state_cache-v2-${{ hashFiles('**/Project.toml', '**/Manifest.toml', '.github/workflows/*' ) }}-${{ hashFiles('**/*jl') }}
