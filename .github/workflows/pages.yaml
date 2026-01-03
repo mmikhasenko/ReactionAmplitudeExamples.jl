@@ -5,6 +5,10 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  JULIA_VERSION: "1.11"
+  PLUTO_SLIDER_SERVER_VERSION: "1"
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -17,12 +21,24 @@ jobs:
       - name: Install Julia
         uses: julia-actions/setup-julia@v2
         with:
-          version: 1.11.2
+          version: ${{ env.JULIA_VERSION }}
 
-      - name: Cache Julia artifacts & such
-        uses: julia-actions/cache@v2
+      # FIXED: Use STABLE cache key for Julia packages
+      # Old julia-actions/cache used hashFiles which invalidated on ANY .jl change
+      # New key only changes when Julia or PlutoSliderServer version changes
+      - name: Cache Julia packages (stable key)
+        uses: actions/cache@v4
         with:
-          cache-registries: "true"
+          path: |
+            ~/.julia/artifacts
+            ~/.julia/packages
+            ~/.julia/registries
+            ~/.julia/compiled
+            ~/.julia/scratchspaces
+          key: julia-pkgs-${{ runner.os }}-${{ env.JULIA_VERSION }}-pss${{ env.PLUTO_SLIDER_SERVER_VERSION }}-v1
+          restore-keys: |
+            julia-pkgs-${{ runner.os }}-${{ env.JULIA_VERSION }}-pss${{ env.PLUTO_SLIDER_SERVER_VERSION }}-
+            julia-pkgs-${{ runner.os }}-${{ env.JULIA_VERSION }}-
 
       - name: Update README.md and convert to index.html, add CSS
         run: |
@@ -30,7 +46,7 @@ jobs:
           sudo apt-get install pandoc
           pandoc README.md -s -o README.html
 
-      # We set up a folder that Pluto can use to cache exported notebooks. If the notebook file did not change, then Pluto can take the exported file from cache instead of running the notebook.
+      # Notebook state cache - this CAN change when notebooks change
       - name: Set up notebook state cache
         uses: actions/cache@v4
         with:
@@ -44,7 +60,7 @@ jobs:
           julia -e 'using Pkg
             Pkg.activate(mktempdir())
             Pkg.add([
-              Pkg.PackageSpec(name="PlutoSliderServer", version="1"),
+              Pkg.PackageSpec(name="PlutoSliderServer", version="'${{ env.PLUTO_SLIDER_SERVER_VERSION }}'"),
             ])
 
             import PlutoSliderServer
