@@ -10,7 +10,50 @@ env:
   PLUTO_SLIDER_SERVER_VERSION: "1"
 
 jobs:
+  # Warmup job: Ensures Julia packages are precompiled and cached
+  # This runs FIRST, so the build job can restore from a warm cache
+  warmup-packages:
+    runs-on: ubuntu-latest
+    outputs:
+      cache-hit: ${{ steps.cache.outputs.cache-hit }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Julia
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ env.JULIA_VERSION }}
+
+      - name: Cache Julia packages (stable key)
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.julia/artifacts
+            ~/.julia/packages
+            ~/.julia/registries
+            ~/.julia/compiled
+            ~/.julia/scratchspaces
+          key: julia-pkgs-${{ runner.os }}-${{ env.JULIA_VERSION }}-pss${{ env.PLUTO_SLIDER_SERVER_VERSION }}-v1
+          restore-keys: |
+            julia-pkgs-${{ runner.os }}-${{ env.JULIA_VERSION }}-pss${{ env.PLUTO_SLIDER_SERVER_VERSION }}-
+            julia-pkgs-${{ runner.os }}-${{ env.JULIA_VERSION }}-
+
+      - name: Precompile PlutoSliderServer
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          echo "Cache miss - precompiling packages..."
+          julia -e '
+            using Pkg
+            Pkg.activate(mktempdir())
+            @time Pkg.add(Pkg.PackageSpec(name="PlutoSliderServer", version="'${{ env.PLUTO_SLIDER_SERVER_VERSION }}'"))
+            @time using PlutoSliderServer
+            println("✓ Precompilation complete")
+          '
+
+  # Main build job: Restores cache from warmup, then builds notebooks
   build-and-deploy:
+    needs: warmup-packages
     runs-on: ubuntu-latest
     env:
       PYTHON: ""
@@ -23,11 +66,9 @@ jobs:
         with:
           version: ${{ env.JULIA_VERSION }}
 
-      # FIXED: Use STABLE cache key for Julia packages
-      # Old julia-actions/cache used hashFiles which invalidated on ANY .jl change
-      # New key only changes when Julia or PlutoSliderServer version changes
-      - name: Cache Julia packages (stable key)
-        uses: actions/cache@v5
+      # Restore cache (read-only) - warmup job already populated it
+      - name: Restore Julia packages from cache
+        uses: actions/cache/restore@v5
         with:
           path: |
             ~/.julia/artifacts
@@ -57,6 +98,7 @@ jobs:
 
       - name: Run & export Pluto notebooks
         run: |
+          echo "Cache status from warmup: ${{ needs.warmup-packages.outputs.cache-hit }}"
           julia -e 'using Pkg
             Pkg.activate(mktempdir())
             Pkg.add([
