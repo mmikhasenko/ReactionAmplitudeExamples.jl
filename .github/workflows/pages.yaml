@@ -16,7 +16,7 @@ jobs:
       PYTHON: ""
     steps:
       - name: Checkout this repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Install Julia
         uses: julia-actions/setup-julia@v2
