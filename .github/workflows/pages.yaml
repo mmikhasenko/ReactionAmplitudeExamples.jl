@@ -99,12 +99,9 @@ jobs:
       - name: Run & export Pluto notebooks
         run: |
           echo "Cache status from warmup: ${{ needs.warmup-packages.outputs.cache-hit }}"
-          # Temporarily move long_running directory to hide it from PlutoSliderServer
+          # delete long_running directory to hide it from PlutoSliderServer
           if [ -d "notebooks/long_running" ]; then
-            mv notebooks/long_running notebooks/.long_running_hidden
-            echo "Temporarily hidden notebooks/long_running from PlutoSliderServer"
-            # Ensure directory is restored even if PlutoSliderServer fails
-            trap 'if [ -d "notebooks/.long_running_hidden" ]; then mv notebooks/.long_running_hidden notebooks/long_running; echo "Restored notebooks/long_running directory (cleanup)"; fi' EXIT
+            rm -rf notebooks/long_running
           fi
 
           julia -e 'using Pkg
@@ -120,12 +117,6 @@ jobs:
               Export_baked_notebookfile=false,
               Export_baked_state=false,
             )'
-
-          # Restore long_running directory after PlutoSliderServer finishes
-          if [ -d "notebooks/.long_running_hidden" ]; then
-            mv notebooks/.long_running_hidden notebooks/long_running
-            echo "Restored notebooks/long_running directory"
-          fi
 
       - name: Deploy to gh-pages
         uses: JamesIves/github-pages-deploy-action@releases/v4
