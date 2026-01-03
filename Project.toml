@@ -1,5 +1,7 @@
 [deps]
+HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 HadronicLineshapes = "49c9d978-1f9d-4e96-a984-0a9783c0b9bf"
 PlutoSliderServer = "2fc8631c-6f24-4c5b-bca7-cbb509c42db4"
+Sockets = "6462fe0b-24de-5631-8697-dd941f90decc"
 ThreeBodyDecays = "e6563dab-9ca1-5843-bde3-2ccf38d63843"
 Weave = "44d3d7a6-8a23-5bf8-98c5-b353f8df5ec9"

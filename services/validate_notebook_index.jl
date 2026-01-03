@@ -21,6 +21,7 @@ function main()
     readme_content = read(readme_path, String)
     linked_notebooks_relative = String[]
     # Regex to find markdown links like (notebooks/N-XXX-something.jl) or (notebooks/L-XXX-something.jl)
+    # Only matches top-level notebooks directory, not subdirectories
     regex = r"\(notebooks/([NL]-\d{3}-.*?\.jl)\)"
     for match in eachmatch(regex, readme_content)
         push!(linked_notebooks_relative, "notebooks/" * match.captures[1])
@@ -30,7 +31,7 @@ function main()
     # 2. Check if linked notebooks exist on disk
     nonexistent_files = filter(path -> !isfile(joinpath(base_dir, path)), linked_notebooks_relative) |> unique
 
-    # 3. Get all actual .jl files in the notebooks directory
+    # 3. Get all actual .jl files in the notebooks directory (top-level only, no subdirectories)
     actual_notebook_files = filter(f -> endswith(f, ".jl") && !endswith(f, ".plutostate"), readdir(notebooks_dir))
     actual_notebook_paths = ["notebooks/$file" for file in actual_notebook_files]
 
