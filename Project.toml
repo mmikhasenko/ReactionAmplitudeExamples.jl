@@ -1,4 +1,5 @@
 [deps]
 HadronicLineshapes = "49c9d978-1f9d-4e96-a984-0a9783c0b9bf"
+PlutoSliderServer = "2fc8631c-6f24-4c5b-bca7-cbb509c42db4"
 ThreeBodyDecays = "e6563dab-9ca1-5843-bde3-2ccf38d63843"
 Weave = "44d3d7a6-8a23-5bf8-98c5-b353f8df5ec9"
