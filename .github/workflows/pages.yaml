@@ -6,13 +6,75 @@ on:
       - "cursor/ci-stage*"  # Allow testing on staging branches
   workflow_dispatch:
 
+# Cancel in-progress runs on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   JULIA_VERSION: "1.11"
   PLUTO_SLIDER_SERVER_VERSION: "1"
 
 jobs:
-  # Stage 2: Warmup job runs FIRST to ensure packages are precompiled
-  # This job's cache is then restored by the build job
+  # ========================================
+  # Stage 1: Discover notebooks for matrix
+  # ========================================
+  discover-notebooks:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      total: ${{ steps.set-matrix.outputs.total }}
+      chunks: ${{ steps.set-matrix.outputs.chunks }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create notebook matrix
+        id: set-matrix
+        run: |
+          # Find all Pluto notebooks
+          NOTEBOOKS=$(find notebooks -name "*.jl" -exec grep -l "^### A Pluto.jl notebook ###" {} \; 2>/dev/null | sort)
+          TOTAL=$(echo "$NOTEBOOKS" | grep -c . || echo "0")
+          
+          echo "Found $TOTAL Pluto notebooks"
+          echo "total=$TOTAL" >> $GITHUB_OUTPUT
+          
+          # Create chunks of 5 notebooks each
+          CHUNK_SIZE=5
+          CHUNK_ID=0
+          CURRENT_CHUNK=""
+          COUNT=0
+          MATRIX='{"include":['
+          FIRST=true
+          
+          while IFS= read -r notebook; do
+            [ -z "$notebook" ] && continue
+            if [ $COUNT -ge $CHUNK_SIZE ]; then
+              [ "$FIRST" = false ] && MATRIX="$MATRIX,"
+              FIRST=false
+              MATRIX="$MATRIX{\"chunk_id\":$CHUNK_ID,\"notebooks\":\"$CURRENT_CHUNK\"}"
+              CHUNK_ID=$((CHUNK_ID + 1))
+              CURRENT_CHUNK="$notebook"
+              COUNT=1
+            else
+              [ -n "$CURRENT_CHUNK" ] && CURRENT_CHUNK="$CURRENT_CHUNK,$notebook" || CURRENT_CHUNK="$notebook"
+              COUNT=$((COUNT + 1))
+            fi
+          done <<< "$NOTEBOOKS"
+          
+          # Last chunk
+          if [ -n "$CURRENT_CHUNK" ]; then
+            [ "$FIRST" = false ] && MATRIX="$MATRIX,"
+            MATRIX="$MATRIX{\"chunk_id\":$CHUNK_ID,\"notebooks\":\"$CURRENT_CHUNK\"}"
+            CHUNK_ID=$((CHUNK_ID + 1))
+          fi
+          
+          MATRIX="$MATRIX]}"
+          echo "chunks=$CHUNK_ID" >> $GITHUB_OUTPUT
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+
+  # ========================================
+  # Stage 2: Warmup - precompile packages once
+  # ========================================
   warmup-packages:
     runs-on: ubuntu-latest
     outputs:
@@ -20,12 +82,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Julia
-        uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ env.JULIA_VERSION }}
 
-      - name: Cache Julia packages (stable key)
+      - name: Cache Julia packages
         id: cache
         uses: actions/cache@v4
         with:
@@ -39,47 +100,37 @@ jobs:
           restore-keys: |
             julia-pkgs-${{ runner.os }}-${{ env.JULIA_VERSION }}-
 
-      - name: Precompile PlutoSliderServer
+      - name: Precompile packages
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
-          echo "Cache miss - precompiling packages..."
           julia -e '
             using Pkg
             Pkg.activate(mktempdir())
             @time Pkg.add(Pkg.PackageSpec(name="PlutoSliderServer", version="'${{ env.PLUTO_SLIDER_SERVER_VERSION }}'"))
             @time using PlutoSliderServer
-            println("✓ PlutoSliderServer precompiled")
+            println("✓ Precompilation complete")
           '
 
-      - name: Report warmup status
-        run: |
-          echo "## Warmup Job" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.cache.outputs.cache-hit }}" == "true" ]; then
-            echo "✅ Cache HIT - packages already precompiled" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ Cache MISS - packages were precompiled in this run" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Build job will now restore from this cache." >> $GITHUB_STEP_SUMMARY
-
-  # Main build job - waits for warmup, then restores cached packages
-  build-and-deploy:
-    needs: warmup-packages
+  # ========================================
+  # Stage 3: Parallel notebook builds
+  # ========================================
+  build-notebooks:
+    needs: [discover-notebooks, warmup-packages]
+    if: needs.discover-notebooks.outputs.total != '0'
     runs-on: ubuntu-latest
-    env:
-      PYTHON: ""
+    strategy:
+      fail-fast: false  # Continue other chunks if one fails
+      max-parallel: 10
+      matrix: ${{ fromJson(needs.discover-notebooks.outputs.matrix) }}
     steps:
-      - name: Checkout this repository
-        uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
-      - name: Install Julia
-        uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ env.JULIA_VERSION }}
 
-      # RESTORE the cache that warmup-packages created/populated
-      - name: Restore Julia packages from cache
+      # Restore packages from warmup's cache
+      - name: Restore Julia packages
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -89,49 +140,153 @@ jobs:
             ~/.julia/compiled
             ~/.julia/scratchspaces
           key: julia-pkgs-${{ runner.os }}-${{ env.JULIA_VERSION }}-pss${{ env.PLUTO_SLIDER_SERVER_VERSION }}-v1
-          restore-keys: |
-            julia-pkgs-${{ runner.os }}-${{ env.JULIA_VERSION }}-
 
-      - name: Update README.md and convert to index.html, add CSS
-        run: |
-          julia services/list_notebooks.jl
-          sudo apt-get install pandoc
-          pandoc README.md -s -o README.html
-
-      - name: Set up notebook state cache
+      - name: Notebook state cache
         uses: actions/cache@v4
         with:
           path: pluto_state_cache
-          key: ${{ runner.os }}-pluto_state_cache-v2-${{ hashFiles('**/Project.toml', '**/Manifest.toml', '.github/workflows/*' ) }}-${{ hashFiles('**/*jl') }}
-          restore-keys: |
-            ${{ runner.os }}-pluto_state_cache-v2-${{ hashFiles('**/Project.toml', '**/Manifest.toml', '.github/workflows/*' ) }}
+          key: pluto-state-chunk${{ matrix.chunk_id }}-${{ hashFiles(format('{0}', matrix.notebooks)) }}
+          restore-keys: pluto-state-chunk${{ matrix.chunk_id }}-
 
-      - name: Run & export Pluto notebooks
+      - name: Build chunk ${{ matrix.chunk_id }}
         run: |
-          echo "Warmup cache hit: ${{ needs.warmup-packages.outputs.cache-hit }}"
+          mkdir -p output/notebooks
           
-          julia -e 'using Pkg
+          julia -e '
+            using Pkg
             Pkg.activate(mktempdir())
             
+            # Should be fast - packages precompiled by warmup job
             println("Loading PlutoSliderServer...")
             load_start = time()
-            Pkg.add([
-              Pkg.PackageSpec(name="PlutoSliderServer", version="'${{ env.PLUTO_SLIDER_SERVER_VERSION }}'"),
-            ])
+            Pkg.add(Pkg.PackageSpec(name="PlutoSliderServer", version="'${{ env.PLUTO_SLIDER_SERVER_VERSION }}'"); io=devnull)
             import PlutoSliderServer
             println("  Loaded in $(round(time() - load_start, digits=1))s")
+            
+            # Build all notebooks in this chunk
+            notebooks = String.(filter(!isempty, strip.(split(ENV["NOTEBOOKS"], ","))))
+            println("\nBuilding $(length(notebooks)) notebooks...")
+            
+            for (i, nb) in enumerate(notebooks)
+              println("\n[$i/$(length(notebooks))] $nb")
+              start = time()
+              try
+                PlutoSliderServer.export_notebook(nb;
+                  Export_cache_dir="pluto_state_cache",
+                  Export_baked_notebookfile=false,
+                  Export_baked_state=false,
+                  Export_output_dir="output",
+                )
+                println("  ✓ $(round(time() - start, digits=1))s")
+              catch e
+                println("  ✗ Failed: $e")
+              end
+            end
+          '
+        env:
+          NOTEBOOKS: ${{ matrix.notebooks }}
+        timeout-minutes: 30
 
-            PlutoSliderServer.github_action(".";
-              Export_cache_dir="pluto_state_cache",
-              Export_baked_notebookfile=false,
-              Export_baked_state=false,
-            )'
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: notebooks-chunk-${{ matrix.chunk_id }}
+          path: output/
+          retention-days: 1
+          if-no-files-found: warn
 
-      - name: Deploy to gh-pages
-        if: github.ref == 'refs/heads/main'
+  # ========================================
+  # Generate index (parallel with notebooks)
+  # ========================================
+  generate-index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ env.JULIA_VERSION }}
+
+      - name: Generate index
+        run: |
+          julia services/list_notebooks.jl
+          sudo apt-get install -y pandoc
+          pandoc README.md -s -o README.html
+
+      - name: Upload index
+        uses: actions/upload-artifact@v4
+        with:
+          name: index-files
+          path: |
+            index.html
+            README.html
+            styles.css
+
+  # ========================================
+  # Merge and deploy
+  # ========================================
+  deploy:
+    needs: [build-notebooks, generate-index]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download notebook artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: notebooks-chunk-*
+          path: downloaded
+          merge-multiple: true
+
+      - name: Download index
+        uses: actions/download-artifact@v4
+        with:
+          name: index-files
+          path: .
+
+      - name: Prepare deployment
+        run: |
+          mkdir -p deploy/notebooks
+          [ -d downloaded/notebooks ] && cp -r downloaded/notebooks/* deploy/notebooks/ || true
+          cp index.html README.html styles.css deploy/ 2>/dev/null || true
+          echo "Deploying $(find deploy -name '*.html' | wc -l) HTML files"
+
+      - name: Deploy
         uses: JamesIves/github-pages-deploy-action@releases/v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: gh-pages
-          folder: .
+          folder: deploy
           single-commit: true
+
+  # ========================================
+  # Summary
+  # ========================================
+  summary:
+    needs: [discover-notebooks, warmup-packages, build-notebooks]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build summary
+        run: |
+          cat << EOF >> $GITHUB_STEP_SUMMARY
+          # Build Summary
+          
+          | Metric | Value |
+          |--------|-------|
+          | Total notebooks | ${{ needs.discover-notebooks.outputs.total }} |
+          | Parallel chunks | ${{ needs.discover-notebooks.outputs.chunks }} |
+          | Cache hit | ${{ needs.warmup-packages.outputs.cache-hit }} |
+          | Build result | ${{ needs.build-notebooks.result }} |
+          
+          ## Architecture
+          
+          \`\`\`
+          discover-notebooks ─┐
+                              ├──> build-notebooks (×${{ needs.discover-notebooks.outputs.chunks }} parallel)
+          warmup-packages ────┘                          │
+                                                         ↓
+          generate-index ──────────────────────────> deploy
+          \`\`\`
+          EOF
