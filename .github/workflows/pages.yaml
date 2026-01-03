@@ -27,7 +27,7 @@ jobs:
       # Old julia-actions/cache used hashFiles which invalidated on ANY .jl change
       # New key only changes when Julia or PlutoSliderServer version changes
       - name: Cache Julia packages (stable key)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.julia/artifacts
@@ -48,7 +48,7 @@ jobs:
 
       # Notebook state cache - this CAN change when notebooks change
       - name: Set up notebook state cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: pluto_state_cache
           key: ${{ runner.os }}-pluto_state_cache-v2-${{ hashFiles('**/Project.toml', '**/Manifest.toml', '.github/workflows/*' ) }}-${{ hashFiles('**/*jl') }}
