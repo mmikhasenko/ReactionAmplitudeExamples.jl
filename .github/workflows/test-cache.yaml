@@ -1,0 +1,113 @@
+name: Test Cache Behavior
+
+# This workflow tests that the cache key is working correctly.
+# Run it twice - second run should show cache HIT.
+
+on:
+  push:
+    branches:
+      - "cursor/ci-stage1*"
+  workflow_dispatch:
+
+env:
+  JULIA_VERSION: "1.11"
+  PLUTO_SLIDER_SERVER_VERSION: "1"
+
+jobs:
+  test-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Julia
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ env.JULIA_VERSION }}
+
+      - name: Cache Julia packages
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.julia/artifacts
+            ~/.julia/packages
+            ~/.julia/registries
+            ~/.julia/compiled
+            ~/.julia/scratchspaces
+          key: julia-pkgs-${{ runner.os }}-${{ env.JULIA_VERSION }}-pss${{ env.PLUTO_SLIDER_SERVER_VERSION }}-v1
+          restore-keys: |
+            julia-pkgs-${{ runner.os }}-${{ env.JULIA_VERSION }}-
+
+      - name: Report cache status
+        run: |
+          echo "## Cache Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.cache.outputs.cache-hit }}" == "true" ]; then
+            echo "✅ **CACHE HIT** - Packages restored from cache" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "This confirms the stable cache key is working!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **CACHE MISS** - Will precompile packages" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "First run or cache expired. Next run should hit cache." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Precompile PlutoSliderServer (measure time)
+        run: |
+          echo "## Precompilation Timing" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          START=$(date +%s)
+          
+          julia -e '
+            using Pkg
+            Pkg.activate(mktempdir())
+            Pkg.add(Pkg.PackageSpec(name="PlutoSliderServer", version="'${{ env.PLUTO_SLIDER_SERVER_VERSION }}'"))
+            using PlutoSliderServer
+            println("PlutoSliderServer loaded successfully")
+          '
+          
+          END=$(date +%s)
+          DURATION=$((END - START))
+          
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Cache hit | ${{ steps.cache.outputs.cache-hit }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Load time | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.cache.outputs.cache-hit }}" == "true" ]; then
+            echo "**Expected**: ~5-10s (packages already compiled)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Expected**: ~60-90s (first time compilation)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Build ONE notebook (timing test)
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Single Notebook Build" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          START=$(date +%s)
+          
+          julia -e '
+            using Pkg
+            Pkg.activate(mktempdir())
+            Pkg.add(Pkg.PackageSpec(name="PlutoSliderServer", version="'${{ env.PLUTO_SLIDER_SERVER_VERSION }}'"); io=devnull)
+            import PlutoSliderServer
+            
+            mkdir("output")
+            PlutoSliderServer.export_notebook(
+              "notebooks/N-061-complex-random-variance.jl";
+              Export_cache_dir="cache",
+              Export_baked_notebookfile=false,
+              Export_baked_state=false,
+              Export_output_dir="output",
+            )
+          '
+          
+          END=$(date +%s)
+          DURATION=$((END - START))
+          
+          echo "Built \`N-061-complex-random-variance.jl\` in **${DURATION}s**" >> $GITHUB_STEP_SUMMARY
+        timeout-minutes: 10
