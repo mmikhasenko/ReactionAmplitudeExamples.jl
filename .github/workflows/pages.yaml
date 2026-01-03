@@ -11,7 +11,61 @@ env:
   PLUTO_SLIDER_SERVER_VERSION: "1"
 
 jobs:
+  # Stage 2: Warmup job runs FIRST to ensure packages are precompiled
+  # This job's cache is then restored by the build job
+  warmup-packages:
+    runs-on: ubuntu-latest
+    outputs:
+      cache-hit: ${{ steps.cache.outputs.cache-hit }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Julia
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ env.JULIA_VERSION }}
+
+      - name: Cache Julia packages (stable key)
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.julia/artifacts
+            ~/.julia/packages
+            ~/.julia/registries
+            ~/.julia/compiled
+            ~/.julia/scratchspaces
+          key: julia-pkgs-${{ runner.os }}-${{ env.JULIA_VERSION }}-pss${{ env.PLUTO_SLIDER_SERVER_VERSION }}-v1
+          restore-keys: |
+            julia-pkgs-${{ runner.os }}-${{ env.JULIA_VERSION }}-
+
+      - name: Precompile PlutoSliderServer
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          echo "Cache miss - precompiling packages..."
+          julia -e '
+            using Pkg
+            Pkg.activate(mktempdir())
+            @time Pkg.add(Pkg.PackageSpec(name="PlutoSliderServer", version="'${{ env.PLUTO_SLIDER_SERVER_VERSION }}'"))
+            @time using PlutoSliderServer
+            println("✓ PlutoSliderServer precompiled")
+          '
+
+      - name: Report warmup status
+        run: |
+          echo "## Warmup Job" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.cache.outputs.cache-hit }}" == "true" ]; then
+            echo "✅ Cache HIT - packages already precompiled" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Cache MISS - packages were precompiled in this run" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Build job will now restore from this cache." >> $GITHUB_STEP_SUMMARY
+
+  # Main build job - waits for warmup, then restores cached packages
   build-and-deploy:
+    needs: warmup-packages
     runs-on: ubuntu-latest
     env:
       PYTHON: ""
@@ -24,11 +78,9 @@ jobs:
         with:
           version: ${{ env.JULIA_VERSION }}
 
-      # FIXED: Use STABLE cache key for Julia packages
-      # Old key included hashFiles('**/*jl') which invalidated on ANY notebook change
-      # New key only changes when Julia or PlutoSliderServer version changes
-      - name: Cache Julia packages (stable key)
-        uses: actions/cache@v4
+      # RESTORE the cache that warmup-packages created/populated
+      - name: Restore Julia packages from cache
+        uses: actions/cache/restore@v4
         with:
           path: |
             ~/.julia/artifacts
@@ -38,7 +90,6 @@ jobs:
             ~/.julia/scratchspaces
           key: julia-pkgs-${{ runner.os }}-${{ env.JULIA_VERSION }}-pss${{ env.PLUTO_SLIDER_SERVER_VERSION }}-v1
           restore-keys: |
-            julia-pkgs-${{ runner.os }}-${{ env.JULIA_VERSION }}-pss${{ env.PLUTO_SLIDER_SERVER_VERSION }}-
             julia-pkgs-${{ runner.os }}-${{ env.JULIA_VERSION }}-
 
       - name: Update README.md and convert to index.html, add CSS
@@ -47,7 +98,6 @@ jobs:
           sudo apt-get install pandoc
           pandoc README.md -s -o README.html
 
-      # Notebook state cache - this CAN change when notebooks change
       - name: Set up notebook state cache
         uses: actions/cache@v4
         with:
@@ -58,13 +108,18 @@ jobs:
 
       - name: Run & export Pluto notebooks
         run: |
+          echo "Warmup cache hit: ${{ needs.warmup-packages.outputs.cache-hit }}"
+          
           julia -e 'using Pkg
             Pkg.activate(mktempdir())
+            
+            println("Loading PlutoSliderServer...")
+            load_start = time()
             Pkg.add([
               Pkg.PackageSpec(name="PlutoSliderServer", version="'${{ env.PLUTO_SLIDER_SERVER_VERSION }}'"),
             ])
-
             import PlutoSliderServer
+            println("  Loaded in $(round(time() - load_start, digits=1))s")
 
             PlutoSliderServer.github_action(".";
               Export_cache_dir="pluto_state_cache",

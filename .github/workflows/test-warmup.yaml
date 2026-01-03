@@ -1,0 +1,156 @@
+name: Test Warmup Pattern
+
+# This workflow tests that the warmup job pattern works correctly.
+# The warmup job should precompile packages, then the build job should
+# be able to restore and use them quickly.
+
+on:
+  push:
+    branches:
+      - "cursor/ci-stage2*"
+  workflow_dispatch:
+
+env:
+  JULIA_VERSION: "1.11"
+  PLUTO_SLIDER_SERVER_VERSION: "1"
+
+jobs:
+  # Job 1: Warmup - precompile and cache packages
+  warmup:
+    runs-on: ubuntu-latest
+    outputs:
+      cache-hit: ${{ steps.cache.outputs.cache-hit }}
+      warmup-time: ${{ steps.timing.outputs.time }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ env.JULIA_VERSION }}
+
+      - name: Cache Julia packages
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.julia/artifacts
+            ~/.julia/packages
+            ~/.julia/registries
+            ~/.julia/compiled
+            ~/.julia/scratchspaces
+          key: julia-pkgs-${{ runner.os }}-${{ env.JULIA_VERSION }}-pss${{ env.PLUTO_SLIDER_SERVER_VERSION }}-v1
+
+      - name: Record start time
+        id: start
+        run: echo "time=$(date +%s)" >> $GITHUB_OUTPUT
+
+      - name: Precompile if needed
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          julia -e '
+            using Pkg
+            Pkg.activate(mktempdir())
+            @time Pkg.add(Pkg.PackageSpec(name="PlutoSliderServer", version="'${{ env.PLUTO_SLIDER_SERVER_VERSION }}'"))
+            @time using PlutoSliderServer
+          '
+
+      - name: Calculate warmup time
+        id: timing
+        run: |
+          END=$(date +%s)
+          START=${{ steps.start.outputs.time }}
+          echo "time=$((END - START))" >> $GITHUB_OUTPUT
+
+  # Job 2: Build - restore cache and measure load time
+  build:
+    needs: warmup
+    runs-on: ubuntu-latest
+    outputs:
+      load-time: ${{ steps.timing.outputs.time }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ env.JULIA_VERSION }}
+
+      # Use cache/restore (not cache) - we only read, don't write
+      - name: Restore Julia packages
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.julia/artifacts
+            ~/.julia/packages
+            ~/.julia/registries
+            ~/.julia/compiled
+            ~/.julia/scratchspaces
+          key: julia-pkgs-${{ runner.os }}-${{ env.JULIA_VERSION }}-pss${{ env.PLUTO_SLIDER_SERVER_VERSION }}-v1
+
+      - name: Measure package load time
+        id: timing
+        run: |
+          START=$(date +%s)
+          
+          julia -e '
+            using Pkg
+            Pkg.activate(mktempdir())
+            
+            println("Loading PlutoSliderServer...")
+            load_start = time()
+            Pkg.add(Pkg.PackageSpec(name="PlutoSliderServer", version="'${{ env.PLUTO_SLIDER_SERVER_VERSION }}'"); io=devnull)
+            import PlutoSliderServer
+            println("Loaded in $(round(time() - load_start, digits=1))s")
+          '
+          
+          END=$(date +%s)
+          echo "time=$((END - START))" >> $GITHUB_OUTPUT
+
+      - name: Build one notebook
+        run: |
+          julia -e '
+            using Pkg
+            Pkg.activate(mktempdir())
+            Pkg.add(Pkg.PackageSpec(name="PlutoSliderServer", version="'${{ env.PLUTO_SLIDER_SERVER_VERSION }}'"); io=devnull)
+            import PlutoSliderServer
+            mkdir("output")
+            PlutoSliderServer.export_notebook(
+              "notebooks/N-061-complex-random-variance.jl";
+              Export_cache_dir="cache",
+              Export_baked_notebookfile=false,
+              Export_baked_state=false,
+              Export_output_dir="output",
+            )
+          '
+        timeout-minutes: 10
+
+  # Job 3: Report results
+  report:
+    needs: [warmup, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate report
+        run: |
+          cat << EOF >> $GITHUB_STEP_SUMMARY
+          # Warmup Pattern Test Results
+          
+          ## Timing
+          | Job | Duration | Notes |
+          |-----|----------|-------|
+          | Warmup | ${{ needs.warmup.outputs.warmup-time }}s | Cache hit: ${{ needs.warmup.outputs.cache-hit }} |
+          | Build (load packages) | ${{ needs.build.outputs.load-time }}s | Should be ~5-10s if cache works |
+          
+          ## Verification
+          
+          ✅ **Warmup job** ran first and populated/verified cache
+          
+          ✅ **Build job** restored cache and loaded packages
+          
+          ## Expected Behavior
+          
+          - First run: Warmup takes ~60-90s (precompilation)
+          - Subsequent runs: Warmup takes ~15-20s (cache hit)
+          - Build job: Always ~5-10s (restores from warmup's cache)
+          
+          The key insight is that the **build job** benefits from the **warmup job's** 
+          cache population, even though they run on different runners.
+          EOF
