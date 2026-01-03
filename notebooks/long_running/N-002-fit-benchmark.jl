@@ -5,20 +5,19 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ 05696c5b-e8a2-4ae5-ae6b-bd0c80567ea1
-using Pkg; Pkg.status()
 
 # ╔═╡ 85be5308-4aab-11f0-0bcc-c5fa8ed24dbe
 begin
-	using Plots
-	using FHist
-	using Optim
-	using QuadGK
-	using Minuit2
-	using Parameters
-	using DataFrames
-	using Distributions
-	using BenchmarkTools
-	using ComponentArrays
+    using Plots
+    using FHist
+    using Optim
+    using QuadGK
+    using Minuit2
+    using Parameters
+    using DataFrames
+    using Distributions
+    using BenchmarkTools
+    using ComponentArrays
 end
 
 # ╔═╡ dd672584-c004-40e0-9ef8-50b8c17ccbc4
@@ -29,34 +28,34 @@ This notebook builds a model of gaussian signal and exponential background and p
 """
 
 # ╔═╡ 46b9c4e4-0c88-451e-8f54-e4cce344c14d
-theme(:boxed, ylim=(0,:auto))
+theme(:boxed, ylim=(0, :auto))
 
 # ╔═╡ 37bec4e4-0ab5-4041-ab59-c2c3d2fdacc2
 function signal_model(pars, a, b)
-	@unpack μ, σ = pars
-	return truncated(Normal(μ, σ), a, b)
+    @unpack μ, σ = pars
+    return truncated(Normal(μ, σ), a, b)
 end
 
 # ╔═╡ 1ced931d-95d9-4dbc-96ed-1fee498cd702
 function bgd_model(pars, a, b)
-	@unpack τ = pars
-	return truncated(Exponential(τ), a, b)
+    @unpack τ = pars
+    return truncated(Exponential(τ), a, b)
 end
 
 # ╔═╡ a5c05bb1-5716-4a0a-8bd1-b2649e523ecf
 function total_model(pars, a, b)
-	@unpack log_fb = pars
-	prior = [1, exp(log_fb)] ./ (1+exp(log_fb))
-	MixtureModel(
-		[signal_model(pars.sig, a, b), bgd_model(pars.bgd, a, b)],
-		prior)
+    @unpack log_fb = pars
+    prior = [1, exp(log_fb)] ./ (1 + exp(log_fb))
+    MixtureModel(
+        [signal_model(pars.sig, a, b), bgd_model(pars.bgd, a, b)],
+        prior)
 end
 
 # ╔═╡ 52e72422-d1ab-4d9b-b08b-2fb5fca5409a
 const gen_pars = ComponentArray(
-	sig=(μ=5.28, σ=0.06),
-	bgd=(τ=1.0,),
-	log_fb = 1/(1/(1-0.7)-1)
+    sig=(μ=5.28, σ=0.06),
+    bgd=(τ=1.0,),
+    log_fb=1 / (1 / (1 - 0.7) - 1)
 )
 
 # ╔═╡ b41e20f3-eeea-4ed0-8ceb-595d87ebe85d
@@ -67,16 +66,16 @@ model = total_model(gen_pars, x_range...)
 
 # ╔═╡ cde13e76-7da0-49cd-82ed-ffded5fc748a
 let
-	data = rand(model, 10_000)
-	h = Hist1D(data, binedges=range(x_range..., 100));
-	# 
-	plot()
-	scatter!(bincenters(h), h.bincounts, yerr=sqrt.(h.bincounts), ms=2)
-	# 
-	binedges = h.binedges[1]
-	Δx = binedges[2]-binedges[1]
-	scale = FHist.integral(h) * Δx
-	plot!(x->pdf(model, x) * scale, x_range...)
+    data = rand(model, 10_000)
+    h = Hist1D(data, binedges=range(x_range..., 100))
+    # 
+    plot()
+    scatter!(bincenters(h), h.bincounts, yerr=sqrt.(h.bincounts), ms=2)
+    # 
+    binedges = h.binedges[1]
+    Δx = binedges[2] - binedges[1]
+    scale = FHist.integral(h) * Δx
+    plot!(x -> pdf(model, x) * scale, x_range...)
 end
 
 # ╔═╡ 4203258e-ef83-4e9c-8cc9-163120683ff9
@@ -109,81 +108,81 @@ md"""
 
 # ╔═╡ 9af59c7f-8933-445b-a2ba-8826c9e91b25
 function nll(model, data)
-	_pdf_v = pdf.(model, data)
-	-sum(log, _pdf_v)
+    _pdf_v = pdf.(model, data)
+    -sum(log, _pdf_v)
 end
 
 # ╔═╡ 83bbda69-7f38-4978-ac45-036590b28909
 function fit_nll_optim(build_model, data; init_pars)
-	objective(pars) = nll(build_model(pars), data)
-	fit_res = optimize(objective, init_pars)
-	best_pars = fit_res.minimizer
-	best_model = build_model(best_pars)
-	return (; best_pars, best_model, fit_res)
+    objective(pars) = nll(build_model(pars), data)
+    fit_res = optimize(objective, init_pars)
+    best_pars = fit_res.minimizer
+    best_model = build_model(best_pars)
+    return (; best_pars, best_model, fit_res)
 end
 
 # ╔═╡ a078a97f-c3e6-4277-8f82-e9685cc70642
 function a_toy_optim(n)
-	data = rand(model, n)
+    data = rand(model, n)
 
-	# fit
-	build_model(pars) = total_model(pars, x_range...)
-	(; best_pars, best_model, fit_res) =
-		fit_nll_optim(build_model, data; init_pars = gen_pars)
-	
-	# fit_res.trace
-	(; fit_res.iterations, fit_res.f_calls, fit_res.g_calls, fit_res.minimum, fit_res)
+    # fit
+    build_model(pars) = total_model(pars, x_range...)
+    (; best_pars, best_model, fit_res) =
+        fit_nll_optim(build_model, data; init_pars=gen_pars)
+
+    # fit_res.trace
+    (; fit_res.iterations, fit_res.f_calls, fit_res.g_calls, fit_res.minimum, fit_res)
 end
 
 # ╔═╡ 6706a12b-6981-4b0a-92c6-86d6e0035929
 function fit_nll_minuit(build_model, data; init_pars)
-	ax = getaxes(init_pars)
-	function objective(x)
-		pars = (;
-			sig=(μ=x[1], σ=x[2]),
-			bgd=(τ=x[3],),
-			log_fb = x[4])
-		nll(build_model(pars), data)
-	end
-	m = Minuit(objective, init_pars; tolerance=1e-6)
-	migrad!(m)
-	#
-	best_pars = ComponentArray(collect(m.values), getaxes(init_pars))
-	best_model = build_model(best_pars)
-	return (; best_pars, best_model, fit_res = m)
+    ax = getaxes(init_pars)
+    function objective(x)
+        pars = (;
+            sig=(μ=x[1], σ=x[2]),
+            bgd=(τ=x[3],),
+            log_fb=x[4])
+        nll(build_model(pars), data)
+    end
+    m = Minuit(objective, init_pars; tolerance=1e-6)
+    migrad!(m)
+    #
+    best_pars = ComponentArray(collect(m.values), getaxes(init_pars))
+    best_model = build_model(best_pars)
+    return (; best_pars, best_model, fit_res=m)
 end
 
 # ╔═╡ 0d47cf69-6f1f-4cd6-9490-d52e86093661
 let
-	n = 10_000
-	data = rand(model, n)
-	# fit
-	build_model(pars) = total_model(pars, x_range...)
-	fit_nll_minuit(build_model, data; init_pars = gen_pars)
+    n = 10_000
+    data = rand(model, n)
+    # fit
+    build_model(pars) = total_model(pars, x_range...)
+    fit_nll_minuit(build_model, data; init_pars=gen_pars)
 end
 
 # ╔═╡ 5f263952-f884-4428-bac9-3ee118fc4e52
 function a_toy_minuit(n)
-	data = rand(model, n)
+    data = rand(model, n)
 
-	# fit
-	build_model(pars) = total_model(pars, x_range...)
-	(; best_pars, best_model, fit_res) =
-		fit_nll_minuit(build_model, data; init_pars = gen_pars)
-	
-	# fit_res.trace
-	(; fit_res)
+    # fit
+    build_model(pars) = total_model(pars, x_range...)
+    (; best_pars, best_model, fit_res) =
+        fit_nll_minuit(build_model, data; init_pars=gen_pars)
+
+    # fit_res.trace
+    (; fit_res)
 end
 
 # ╔═╡ 807575ea-4561-4485-8ef6-5960ad92b2ab
 let
-	data = rand(Normal(), 100)
-	# 
-	build_model(p) = Normal(p.μ, p.σ)
-	objective(p) = nll(build_model((; μ=p[1], σ=p[2])), data)
-	# 
-	m = Minuit(objective, ComponentArray(μ=0.0, σ=1.0))
-	migrad!(m)
+    data = rand(Normal(), 100)
+    # 
+    build_model(p) = Normal(p.μ, p.σ)
+    objective(p) = nll(build_model((; μ=p[1], σ=p[2])), data)
+    # 
+    m = Minuit(objective, ComponentArray(μ=0.0, σ=1.0))
+    migrad!(m)
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
