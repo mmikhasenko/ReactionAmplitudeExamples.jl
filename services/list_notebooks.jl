@@ -90,6 +90,20 @@ function build_index_structure(content::AbstractString)
 end
 
 """
+    html_escape(s::AbstractString)
+
+Escape special HTML characters for use in HTML attributes.
+"""
+function html_escape(s::AbstractString)
+    s = replace(s, "&" => "&amp;")
+    s = replace(s, "\"" => "&quot;")
+    s = replace(s, "'" => "&#39;")
+    s = replace(s, "<" => "&lt;")
+    s = replace(s, ">" => "&gt;")
+    return s
+end
+
+"""
     extend_itemized_list(notebooks, html_template)
 
 Generate HTML content for the notebook index by processing each notebook
@@ -103,22 +117,24 @@ function extend_itemized_list(notebooks, html_template)
 
     for (i, notebook) in enumerate(notebooks)
         println("[$i/$(length(notebooks))] Processing $notebook...")
-        notebook_html = replace(notebook, ".jl" => ".html")
+        # Extract just the filename from the full path
+        notebook_filename = basename(notebook)
+        notebook_html = replace(notebook_filename, ".jl" => ".html")
         index = build_index_structure(read(notebook, String))
 
         # Extract titles and subtitles from the index
         if length(index) == 0
-            index = [notebook => []]
+            index = [notebook_filename => []]
         end
         length(index) != 1 && error("Fishy index, not `Title=>[Subs...] in $(notebook)`\n\nindex = $(index)\n\nlength(index) = $(length(index))")
         title = first(index[1])
         subtitles = last(index[1])
 
         # Check if notebook is untitled
-        is_untitled = title == "Untitled" || title == notebook
+        is_untitled = title == "Untitled" || title == notebook_filename
         if is_untitled
             untitled_count += 1
-            println("⚠️  Warning: $notebook has no title. Please add a markdown cell with a # Title and brief description.")
+            println("⚠️  Warning: $notebook_filename has no title. Please add a markdown cell with a # Title and brief description.")
         end
 
         subtitle_list_items = ""
@@ -135,10 +151,14 @@ function extend_itemized_list(notebooks, html_template)
                 Please add a markdown cell with a # Title and brief description.
             </span>""" : ""
 
+        # Prepare searchable text for search functionality
+        subtitle_text = join([s.first for s in subtitles], ", ")
+        search_description = isempty(subtitle_text) ? title : subtitle_text
+
         # incorporate to html
         list_items *= """
         <li>
-            <a href="notebooks/$(notebook_html)" target="notebook-frame">$(notebook)</a>
+            <a href="notebooks/$(notebook_html)" target="notebook-frame" data-title="$(html_escape(title))" data-description="$(html_escape(search_description))">$(notebook_filename)</a>
             <div class="notebook-details">
                 <span class="$(title_class)">$(title)</span>
                 $(warning_msg)
@@ -183,160 +203,70 @@ function generate_index_html()
 
         # Generate the base HTML template
         println("\nGenerating HTML template...")
+        # MathJax configuration (using raw string to avoid $ escaping issues)
+        mathjax_config = raw"""<script>
+window.MathJax = {
+    tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true
+    },
+    options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+    }
+};
+</script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>"""
         html_template = """
         <!DOCTYPE html>
         <html lang="en">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>$(notebooks_dir)</title>
+            <title>Pluto Notebooks - Reaction Amplitude Examples</title>
             <link rel="stylesheet" href="styles.css">
-            <style>
-                body {
-                    margin: 0;
-                    padding: 0;
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-                }
-                .container {
-                    width: 100%;
-                    height: 100vh;
-                }
-                .index-panel {
-                    position: relative;
-                    width: 300px;
-                    min-width: 50px;
-                    height: 100vh;
-                    overflow-y: auto;
-                    float: left;
-                    padding: 20px;
-                    box-sizing: border-box;
-                    background-color: #f8f9fa;
-                    border-right: 1px solid #dee2e6;
-                    transition: width 0.3s;
-                }
-                .index-panel.collapsed {
-                    width: 30px;
-                    padding: 10px 5px;
-                }
-                .index-panel .content {
-                    opacity: 1;
-                    transition: opacity 0.3s;
-                    width: 100%;
-                }
-                .index-panel.collapsed .content {
-                    opacity: 0;
-                }
-                .resize-handle {
-                    position: absolute;
-                    right: 0;
-                    top: 0;
-                    width: 4px;
-                    height: 100%;
-                    background-color: rgba(0, 0, 0, 0.1);
-                    cursor: col-resize;
-                }
-                .resize-handle:hover {
-                    background-color: rgba(0, 0, 0, 0.2);
-                }
-                .toggle-button {
-                    position: absolute;
-                    right: -15px;
-                    top: 50%;
-                    transform: translateY(-50%);
-                    width: 15px;
-                    height: 30px;
-                    background-color: #f8f9fa;
-                    border: 1px solid #dee2e6;
-                    border-left: none;
-                    border-radius: 0 4px 4px 0;
-                    cursor: pointer;
-                    z-index: 1000;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-                .toggle-button::after {
-                    content: "◄";
-                    font-size: 10px;
-                }
-                .index-panel.collapsed .toggle-button::after {
-                    content: "►";
-                }
-                .iframe-container {
-                    margin-left: 300px;
-                    height: 100vh;
-                    transition: margin-left 0.3s;
-                }
-                .index-panel.collapsed + .iframe-container {
-                    margin-left: 30px;
-                }
-                .notebook-display {
-                    width: 100%;
-                    height: 100%;
-                    border: none;
-                }
-                .untitled-warning {
-                    color: #856404;
-                    background-color: #fff3cd;
-                    padding: 2px 8px;
-                    border-radius: 4px;
-                    margin-right: 8px;
-                }
-                .warning-message {
-                    color: #856404;
-                    font-size: 0.9em;
-                    font-style: italic;
-                    display: block;
-                    margin-top: 4px;
-                }
-                .notebook-details {
-                    margin-left: 20px;
-                    margin-bottom: 10px;
-                }
-                .subtitles {
-                    margin: 5px 0;
-                    padding-left: 20px;
-                    list-style-type: disc;
-                }
-                .title {
-                    font-weight: bold;
-                }
-                h3 {
-                    margin-top: 0;
-                }
-            </style>
+            <!-- MathJax for LaTeX rendering -->
+            """ * mathjax_config * """
         </head>
         <body>
             <div class="container">
                 <div class="index-panel">
                     <div class="resize-handle"></div>
-                    <button class="toggle-button"></button>
+                    <button class="toggle-button" aria-label="Toggle sidebar"></button>
                     <div class="content">
-                        <h3>Index</h3>
-                        <ul>
-                            <li><a href="README.html" target="notebook-frame">README</a></li>
+                        <div class="sidebar-header">
+                            <h3>Notebook Index</h3>
+                            <p>Browse and search $(length(notebooks)) notebooks</p>
+                        </div>
+                        <div class="search-container">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" class="search-box" id="searchBox" placeholder="Search notebooks..." autocomplete="off">
+                            <button class="search-clear" id="searchClear" aria-label="Clear search">×</button>
+                        </div>
+                        <ul id="notebookList">
+                            <li><a href="README.html" target="notebook-frame" data-title="README" data-description="Project documentation">README</a></li>
                         </ul>
                     </div>
                 </div>
                 <div class="iframe-container">
-                    <iframe name="notebook-frame" class="notebook-display" src="README.html"></iframe>
+                    <iframe name="notebook-frame" class="notebook-display" src="README.html" title="Notebook viewer" onerror="handleIframeError(this)"></iframe>
                 </div>
             </div>
             <script>
+                (function() {
                 // Sidebar resize functionality
                 const resizeHandle = document.querySelector('.resize-handle');
                 const sidebar = document.querySelector('.index-panel');
-                const container = document.querySelector('.container');
                 const iframeContainer = document.querySelector('.iframe-container');
                 let isResizing = false;
 
                 function handleMouseMove(e) {
                     if (!isResizing) return;
                     e.preventDefault();
-                    // Calculate new width based on mouse position
                     const newWidth = Math.max(50, Math.min(600, e.clientX));
                     sidebar.style.width = newWidth + 'px';
-                    iframeContainer.style.marginLeft = newWidth + 'px';
                 }
 
                 function stopResize(e) {
@@ -347,6 +277,7 @@ function generate_index_html()
                     window.removeEventListener('mouseleave', stopResize);
                 }
 
+                    if (resizeHandle) {
                 resizeHandle.addEventListener('mousedown', (e) => {
                     e.preventDefault();
                     isResizing = true;
@@ -354,27 +285,202 @@ function generate_index_html()
                     window.addEventListener('mouseup', stopResize);
                     window.addEventListener('mouseleave', stopResize);
                 });
+                    }
 
                 // Sidebar collapse functionality
                 const toggleButton = document.querySelector('.toggle-button');
                 
+                    if (toggleButton) {
                 toggleButton.addEventListener('click', () => {
                     sidebar.classList.toggle('collapsed');
                     const isCollapsed = sidebar.classList.contains('collapsed');
-                    iframeContainer.style.marginLeft = isCollapsed ? '30px' : '300px';
-                    
-                    // Store the current state
                     localStorage.setItem('sidebarCollapsed', isCollapsed);
                 });
+                    }
 
                 // Restore sidebar state on page load
                 window.addEventListener('load', () => {
                     const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-                    if (isCollapsed) {
+                        if (isCollapsed && sidebar) {
                         sidebar.classList.add('collapsed');
-                        iframeContainer.style.marginLeft = '30px';
+                        }
+                    });
+
+                    // Search functionality
+                    const searchBox = document.getElementById('searchBox');
+                    const searchClear = document.getElementById('searchClear');
+                    const notebookList = document.getElementById('notebookList');
+                    const allNotebookItems = [];
+
+                    // Collect all notebook items (excluding README)
+                    function collectNotebookItems() {
+                        const items = notebookList.querySelectorAll('li:not(:first-child)');
+                        items.forEach(item => {
+                            const link = item.querySelector('a');
+                            if (link) {
+                                const title = link.getAttribute('data-title') || link.textContent;
+                                const description = link.getAttribute('data-description') || '';
+                                const filename = link.textContent;
+                                const details = item.querySelector('.notebook-details');
+                                const subtitles = details ? Array.from(details.querySelectorAll('.subtitles li')).map(li => li.textContent).join(' ') : '';
+                                
+                                allNotebookItems.push({
+                                    element: item,
+                                    searchText: (filename + ' ' + title + ' ' + description + ' ' + subtitles).toLowerCase()
+                                });
+                            }
+                        });
                     }
-                });
+
+                    function filterNotebooks(searchTerm) {
+                        const term = searchTerm.toLowerCase().trim();
+                        let visibleCount = 0;
+
+                        allNotebookItems.forEach(({element, searchText}) => {
+                            if (term === '' || searchText.includes(term)) {
+                                element.classList.remove('no-match');
+                                visibleCount++;
+                            } else {
+                                element.classList.add('no-match');
+                            }
+                        });
+
+                        // Show/hide clear button
+                        if (searchClear) {
+                            if (term.length > 0) {
+                                searchClear.classList.add('visible');
+                            } else {
+                                searchClear.classList.remove('visible');
+                            }
+                        }
+
+                        // Show empty state if no results
+                        let emptyState = notebookList.querySelector('.empty-state');
+                        if (visibleCount === 0 && term.length > 0) {
+                            if (!emptyState) {
+                                emptyState = document.createElement('li');
+                                emptyState.className = 'empty-state';
+                                emptyState.innerHTML = '<div class="empty-state-icon">📚</div><div class="empty-state-text">No notebooks found matching "' + term + '"</div>';
+                                notebookList.appendChild(emptyState);
+                            }
+                        } else if (emptyState) {
+                            emptyState.remove();
+                        }
+                    }
+
+                    if (searchBox) {
+                        searchBox.addEventListener('input', (e) => {
+                            filterNotebooks(e.target.value);
+                        });
+
+                        // Keyboard shortcuts
+                        searchBox.addEventListener('keydown', (e) => {
+                            if (e.key === 'Escape') {
+                                searchBox.value = '';
+                                filterNotebooks('');
+                                searchBox.blur();
+                            }
+                        });
+                    }
+
+                    if (searchClear) {
+                        searchClear.addEventListener('click', () => {
+                            if (searchBox) {
+                                searchBox.value = '';
+                                filterNotebooks('');
+                                searchBox.focus();
+                            }
+                        });
+                    }
+
+                    // Active link highlighting
+                    function setActiveLink(href) {
+                        const links = notebookList.querySelectorAll('a');
+                        links.forEach(link => {
+                            if (link.getAttribute('href') === href) {
+                                link.classList.add('active');
+                            } else {
+                                link.classList.remove('active');
+                            }
+                        });
+                    }
+
+                    // Update active link when iframe loads
+                    const iframe = document.querySelector('iframe[name="notebook-frame"]');
+                    if (iframe) {
+                        iframe.addEventListener('load', () => {
+                            try {
+                                const iframeSrc = iframe.contentWindow.location.pathname;
+                                const relativePath = iframeSrc.split('/').pop() || 'README.html';
+                                setActiveLink(relativePath);
+                            } catch (e) {
+                                // Cross-origin or other error, use src attribute
+                                const src = iframe.getAttribute('src');
+                                if (src) {
+                                    setActiveLink(src);
+                                }
+                            }
+                        });
+                    }
+
+                    // Handle clicks on notebook links
+                    notebookList.addEventListener('click', (e) => {
+                        const link = e.target.closest('a');
+                        if (link) {
+                            setActiveLink(link.getAttribute('href'));
+                        }
+                    });
+
+                    // Initialize
+                    collectNotebookItems();
+                    
+                    // Handle iframe load errors
+                    function handleIframeError(iframe) {
+                        // This will be called if iframe fails to load
+                        console.warn('Iframe failed to load:', iframe.src);
+                    }
+                    
+                    // Check if iframe loaded successfully
+                    const iframe = document.querySelector('iframe[name="notebook-frame"]');
+                    if (iframe) {
+                        iframe.addEventListener('load', function() {
+                            try {
+                                // Try to access iframe content to check if it loaded
+                                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                                // If we can access it, check for 404
+                                if (iframeDoc.body && iframeDoc.body.textContent.includes('404')) {
+                                    showNotFoundMessage(iframe.src);
+                                }
+                            } catch (e) {
+                                // Cross-origin or other error - might be 404
+                                // Check after a delay
+                                setTimeout(() => {
+                                    try {
+                                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                                        if (!iframeDoc || !iframeDoc.body) {
+                                            showNotFoundMessage(iframe.src);
+                                        }
+                                    } catch (err) {
+                                        // Can't access - might be cross-origin, which is fine
+                                    }
+                                }, 1000);
+                            }
+                        });
+                        
+                        iframe.addEventListener('error', function() {
+                            showNotFoundMessage(iframe.src);
+                        });
+                    }
+                    
+                    function showNotFoundMessage(url) {
+                        const iframe = document.querySelector('iframe[name="notebook-frame"]');
+                        if (iframe) {
+                            const filename = url.split('/').pop() || url;
+                            const errorHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f8f9fa;color:#4a5568}.error-container{text-align:center;padding:40px;max-width:600px}.error-icon{font-size:64px;margin-bottom:20px}h1{color:#1a202c;margin-bottom:16px}p{line-height:1.6;margin-bottom:12px}code{background:#e2e8f0;padding:2px 6px;border-radius:3px;font-family:monospace}</style></head><body><div class="error-container"><div class="error-icon">📄</div><h1>Notebook Not Found</h1><p>The notebook <code>' + filename + '</code> could not be found.</p><p><strong>Local Testing:</strong> Notebook HTML files are generated by PlutoSliderServer in the CI workflow. They won\'t exist locally unless you export them manually.</p><p><strong>On GitHub Pages:</strong> If you see this on the live site, the notebook may not have been exported successfully.</p></div></body></html>';
+                            iframe.srcdoc = errorHtml;
+                        }
+                    }
+                })();
             </script>
         </body>
         </html>
