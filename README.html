@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>README</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<h1 id="reaction-amplitude-examples">Reaction Amplitude Examples</h1>
+<p>Unordered collection of julia scripts and notebooks related to
+particle physics, reaction theory, statistics, and data analysis.</p>
+<ul>
+<li><a
+href="https://github.com/mmikhasenko/ReactionAmplitudeExamples.jl">GitHub
+repository</a></li>
+</ul>
+<p>Pluto notebooks are run in CI and available from the <a
+href="https://mmikhasenko.github.io/ReactionAmplitudeExamples.jl/">GitHub
+Pages</a>.</p>
+<p><strong>Note:</strong> Long-running notebooks (execution time &gt;
+2.5 minutes) are located in the <a
+href="notebooks/long_running/"><code>notebooks/long_running/</code></a>
+folder and are not listed here. They are still processed in CI and
+available on GitHub Pages.</p>
+<h2 id="general">General</h2>
+<ul>
+<li><a
+href="notebooks/N-026-fourier_massspectrum.jl">N-026-fourier_massspectrum.jl</a></li>
+<li><a
+href="notebooks/N-061-complex-random-variance.jl">N-061-complex-random-variance.jl</a></li>
+</ul>
+<h2 id="hep">HEP</h2>
+<ul>
+<li><a
+href="notebooks/N-012-Pythia_FHist_plots.jl">N-012-Pythia_FHist_plots.jl</a></li>
+<li><a href="notebooks/N-062-poisson-CL.jl">N-062-poisson-CL.jl</a></li>
+<li><a
+href="notebooks/L-014-MixedModel-chi2.jl">L-014-MixedModel-chi2.jl</a></li>
+<li><a
+href="notebooks/N-013-MixedModelExample.jl">N-013-MixedModelExample.jl</a></li>
+<li><a href="notebooks/N-059-PDG-API.jl">N-059-PDG-API.jl</a></li>
+<li><a
+href="notebooks/N-035-numconv_prototype.jl">N-035-numconv_prototype.jl</a></li>
+<li><a
+href="notebooks/N-063-poisson-profile.jl">N-063-poisson-profile.jl</a></li>
+</ul>
+<h2 id="coupled-channels">Coupled channels</h2>
+<h3 id="complex-analysis">Complex analysis</h3>
+<ul>
+<li><a
+href="notebooks/N-029-introduction2complexplane.jl">N-029-introduction2complexplane.jl</a></li>
+<li><a
+href="notebooks/N-039-logsqrt_complex_structure.jl">N-039-logsqrt_complex_structure.jl</a></li>
+<li><a
+href="notebooks/N-056-Chew-Mandelstam.jl">N-056-Chew-Mandelstam.jl</a></li>
+<li><a
+href="notebooks/L-047-effectiverangeof2bloop.jl">L-047-effectiverangeof2bloop.jl</a></li>
+<li><a
+href="notebooks/N-058-dispesion-blatt-weisskopf.jl">N-058-dispesion-blatt-weisskopf.jl</a></li>
+</ul>
+<h3 id="k-matrix">K-matrix</h3>
+<ul>
+<li><a
+href="notebooks/L-055-Kmatrix-sliders.jl">L-055-Kmatrix-sliders.jl</a></li>
+<li><a
+href="notebooks/N-054-Mmatrix-and-Kmatrix.jl">N-054-Mmatrix-and-Kmatrix.jl</a></li>
+<li><a
+href="notebooks/N-042-detDsymbolics.jl">N-042-detDsymbolics.jl</a></li>
+<li><a
+href="notebooks/N-049-singlechannelkmatrix.jl">N-049-singlechannelkmatrix.jl</a>
+<!-- explanation of phenomena --></li>
+<li><a
+href="notebooks/N-017-UnitarizedBackground.jl">N-017-UnitarizedBackground.jl</a></li>
+<li><a
+href="notebooks/N-041-derivativeBWonArgand.jl">N-041-derivativeBWonArgand.jl</a></li>
+<li><a
+href="notebooks/N-028-pole_search_optim.jl">N-028-pole_search_optim.jl</a></li>
+<li><a
+href="notebooks/N-030-merging_poles.jl">N-030-merging_poles.jl</a></li>
+<li><a
+href="notebooks/N-066-virtual-and-bound-states.jl">N-066-virtual-and-bound-states.jl</a>
+<!-- examples --></li>
+<li><a
+href="notebooks/N-016-XicK_phasespace_suppression.jl">N-016-XicK_phasespace_suppression.jl</a></li>
+<li><a href="notebooks/L-044-DsDsState.jl">L-044-DsDsState.jl</a></li>
+<li><a
+href="notebooks/N-038-Spuriouspole_a1.jl">N-038-Spuriouspole_a1.jl</a></li>
+</ul>
+<h2 id="triangles">Triangles</h2>
+<ul>
+<li><a
+href="notebooks/L-025-psi-triangle.jl">L-025-psi-triangle.jl</a></li>
+<li><a
+href="notebooks/N-003-advanced_bw.jl">N-003-advanced_bw.jl</a></li>
+</ul>
+<h2 id="three-body-decays">Three body decays</h2>
+<ul>
+<li><a
+href="notebooks/L-024-X2Dx0D0Triangle.jl">L-024-X2Dx0D0Triangle.jl</a></li>
+<li><a href="notebooks/L-032-quiverplot.jl">L-032-quiverplot.jl</a></li>
+<li><a
+href="notebooks/L-052-Xib2Xibpipi.jl">L-052-Xib2Xibpipi.jl</a></li>
+<li><a
+href="notebooks/N-057-a12piKK_toys.jl">N-057-a12piKK_toys.jl</a></li>
+<li><a
+href="notebooks/L-053-Lbpipi_dalitz.jl">L-053-Lbpipi_dalitz.jl</a></li>
+<li><a href="notebooks/N-054-B2jpsietaK.jl">N-054-B2jpsietaK.jl</a></li>
+<li><a href="notebooks/N-018-LcLcK.jl">N-018-LcLcK.jl</a></li>
+<li><a href="notebooks/N-022-OcXX2XicK.jl">N-022-OcXX2XicK.jl</a></li>
+<li><a
+href="notebooks/N-033-LcXX2Lcpipi_angle_crosscheck.jl">N-033-LcXX2Lcpipi_angle_crosscheck.jl</a></li>
+<li><a href="notebooks/N-045-a1dalitz.jl">N-045-a1dalitz.jl</a></li>
+<li><a
+href="notebooks/N-046-LcLcK_momentumdistribution.jl">N-046-LcLcK_momentumdistribution.jl</a></li>
+<li><a
+href="notebooks/N-051-Xibpipi-feeddown.jl">N-051-Xibpipi-feeddown.jl</a></li>
+<li><a
+href="notebooks/N-070-TrackLorentzGroup.jl">N-070-TrackLorentzGroup.jl</a></li>
+</ul>
+<h2 id="jpac">JPAC</h2>
+<ul>
+<li><a
+href="notebooks/N-001-Adams_regge_integral.jl">N-001-Adams_regge_integral.jl</a></li>
+<li><a
+href="notebooks/N-060-double-regge.jl">N-060-double-regge.jl</a></li>
+<li><a href="notebooks/N-050-pipiDeck.jl">N-050-pipiDeck.jl</a></li>
+</ul>
+<h2 id="how-to-run-scripts">How to run scripts</h2>
+<ul>
+<li>Download and install <a href="https://julialang.org/">julia</a></li>
+<li>Run the scripts/notebooks either in terminal, or interactively in <a
+href="https://code.visualstudio.com/">VS code</a> or browser for the
+notebooks.</li>
+</ul>
+<h3 id="pluto-notebooks">Pluto notebooks</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode julia"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># open julia terminal</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Pluto</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>Pluto.<span class="fu">run</span>() <span class="co"># a new tab will open in the browser</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># navigate to notebook file N-XXX-Cool_stuff.jl</span></span></code></pre></div>
+<p><strong>Note:</strong> Long-running notebooks in
+<code>notebooks/long_running/</code> are excluded from automatic
+discovery in CI. When running Pluto locally, they may appear in the file
+browser but are not processed automatically.</p>
+<h3 id="local-index">Local index</h3>
+<p>To build and serve a local index page (similar to the GitHub Pages
+site) for browsing notebooks:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">julia</span> scripts/build_and_serve.jl</span></code></pre></div>
+<p>This will: 1. Generate <code>index.html</code> from the notebooks in
+the <code>notebooks/</code> directory 2. Generate
+<code>README.html</code> from this README file 3. Start a local HTTP
+server on port 8000</p>
+<p>Then open your browser to
+<code>http://localhost:8000/index.html</code> to view the local
+index.</p>
+<p><strong>Note:</strong> The local index shows the notebook structure
+and links, but the actual notebook HTML files are generated by
+PlutoSliderServer in CI. Individual notebook HTML files won’t be
+available locally unless you export them manually from Pluto.</p>
+<h3 id="notebook-environment-management">Notebook environment
+management</h3>
+<p>Scripts in <code>services/</code> for managing notebook environments:
+- <code>analyze_common_env.jl</code> - Analyzes all notebooks and
+generates a common <code>Project.toml</code> and
+<code>Manifest.toml</code> - <code>unify_notebooks.jl</code> - Updates
+all notebooks to use a common environment (see
+<code>services/UNIFICATION_PLAN.md</code> for details)</p>
+</body>
+</html>

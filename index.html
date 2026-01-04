@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pluto Notebooks - Reaction Amplitude Examples</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- MathJax for LaTeX rendering -->
+    <script>
+window.MathJax = {
+    tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true
+    },
+    options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+    }
+};
+</script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>
+<body>
+    <div class="container">
+        <div class="index-panel">
+            <div class="resize-handle"></div>
+            <button class="toggle-button" aria-label="Toggle sidebar"></button>
+            <div class="content">
+                <div class="sidebar-header">
+                    <h3>Notebook Index</h3>
+                    <p>Browse and search 44 notebooks</p>
+                </div>
+                <div class="search-container">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-box" id="searchBox" placeholder="Search notebooks..." autocomplete="off">
+                    <button class="search-clear" id="searchClear" aria-label="Clear search">×</button>
+                </div>
+                <ul id="notebookList">
+                    <li><a href="README.html" target="notebook-frame" data-title="README" data-description="Project documentation">README</a></li>
+               <li>
+    <a href="notebooks/L-014-MixedModel-chi2.html" target="notebook-frame" data-title="L-014-MixedModel-chi2.jl" data-description="L-014-MixedModel-chi2.jl">L-014-MixedModel-chi2.jl</a>
+    <div class="notebook-details">
+        <span class="untitled-warning">L-014-MixedModel-chi2.jl</span>
+        <span class="warning-message">
+    ⚠️ This notebook needs a title and description. 
+    Please add a markdown cell with a # Title and brief description.
+</span>
+        <ul class="subtitles"></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/L-024-X2Dx0D0Triangle.html" target="notebook-frame" data-title="$X \to D^{*0}D^0$ triangle" data-description="$X \to D^{*0}D^0$ triangle">L-024-X2Dx0D0Triangle.jl</a>
+    <div class="notebook-details">
+        <span class="title">$X \to D^{*0}D^0$ triangle</span>
+        
+        <ul class="subtitles"></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/L-025-psi-triangle.html" target="notebook-frame" data-title="Triangle mechanism for $T_{cc1}(4430)$" data-description="Kinematics">L-025-psi-triangle.jl</a>
+    <div class="notebook-details">
+        <span class="title">Triangle mechanism for $T_{cc1}(4430)$</span>
+        
+        <ul class="subtitles"><li>Kinematics</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/L-032-quiverplot.html" target="notebook-frame" data-title="Quiver plot (vector field)" data-description="Quiver plot (vector field)">L-032-quiverplot.jl</a>
+    <div class="notebook-details">
+        <span class="title">Quiver plot (vector field)</span>
+        
+        <ul class="subtitles"></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/L-044-DsDsState.html" target="notebook-frame" data-title="Scattering length at $D_s^+D_s^-$ threshold" data-description="Fit results and intensity, Effective range parameters, Sampling parameters">L-044-DsDsState.jl</a>
+    <div class="notebook-details">
+        <span class="title">Scattering length at $D_s^+D_s^-$ threshold</span>
+        
+        <ul class="subtitles"><li>Fit results and intensity</li><li>Effective range parameters</li><li>Sampling parameters</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/L-047-effectiverangeof2bloop.html" target="notebook-frame" data-title="Effective range of the two-body loop" data-description="Effective range of the two-body loop">L-047-effectiverangeof2bloop.jl</a>
+    <div class="notebook-details">
+        <span class="title">Effective range of the two-body loop</span>
+        
+        <ul class="subtitles"></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/L-052-Xib2Xibpipi.html" target="notebook-frame" data-title="Analysis of $\Xi_b^{**0,-} \to \Xi_b^{0,-} \pi^+ \pi^-$" data-description="Validation with $\Omega_b^- \to \Xi_c^+ K^- \pi^-$, The study case: $\Xi_b^{**0,-} \to \Xi_b^{0,-} \pi^+ \pi^-$:">L-052-Xib2Xibpipi.jl</a>
+    <div class="notebook-details">
+        <span class="title">Analysis of $\Xi_b^{**0,-} \to \Xi_b^{0,-} \pi^+ \pi^-$</span>
+        
+        <ul class="subtitles"><li>Validation with $\Omega_b^- \to \Xi_c^+ K^- \pi^-$</li><li>The study case: $\Xi_b^{**0,-} \to \Xi_b^{0,-} \pi^+ \pi^-$:</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/L-053-Lbpipi_dalitz.html" target="notebook-frame" data-title="Untitled" data-description="Decay channels, Intensity">L-053-Lbpipi_dalitz.jl</a>
+    <div class="notebook-details">
+        <span class="untitled-warning">Untitled</span>
+        <span class="warning-message">
+    ⚠️ This notebook needs a title and description. 
+    Please add a markdown cell with a # Title and brief description.
+</span>
+        <ul class="subtitles"><li>Decay channels</li><li>Intensity</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/L-055-Kmatrix-sliders.html" target="notebook-frame" data-title="Construction of K-matrix" data-description="Construction of K-matrix">L-055-Kmatrix-sliders.jl</a>
+    <div class="notebook-details">
+        <span class="title">Construction of K-matrix</span>
+        
+        <ul class="subtitles"></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-001-Adams_regge_integral.html" target="notebook-frame" data-title="Double Regge integrals" data-description="Double Regge integrals">N-001-Adams_regge_integral.jl</a>
+    <div class="notebook-details">
+        <span class="title">Double Regge integrals</span>
+        
+        <ul class="subtitles"></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-003-advanced_bw.html" target="notebook-frame" data-title="Breit-Wigner $\pi\pi$ P-wave" data-description="Dispersion integral">N-003-advanced_bw.jl</a>
+    <div class="notebook-details">
+        <span class="title">Breit-Wigner $\pi\pi$ P-wave</span>
+        
+        <ul class="subtitles"><li>Dispersion integral</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-012-Pythia_FHist_plots.html" target="notebook-frame" data-title="Charged multiplicity with PYTHIA8.jl" data-description="Charged multiplicity with PYTHIA8.jl">N-012-Pythia_FHist_plots.jl</a>
+    <div class="notebook-details">
+        <span class="title">Charged multiplicity with PYTHIA8.jl</span>
+        
+        <ul class="subtitles"></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-013-MixedModelExample.html" target="notebook-frame" data-title="Mixed Model Example" data-description="Mixed Model Example">N-013-MixedModelExample.jl</a>
+    <div class="notebook-details">
+        <span class="title">Mixed Model Example</span>
+        
+        <ul class="subtitles"></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-016-XicK_phasespace_suppression.html" target="notebook-frame" data-title="Coupled channel and small phase space" data-description="Untitled, Coupled-channel model">N-016-XicK_phasespace_suppression.jl</a>
+    <div class="notebook-details">
+        <span class="title">Coupled channel and small phase space</span>
+        
+        <ul class="subtitles"><li>Untitled</li><li>Coupled-channel model</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-017-UnitarizedBackground.html" target="notebook-frame" data-title="Unitarized background" data-description="Unitarized background">N-017-UnitarizedBackground.jl</a>
+    <div class="notebook-details">
+        <span class="title">Unitarized background</span>
+        
+        <ul class="subtitles"><li>Unitarized background</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-018-LcLcK.html" target="notebook-frame" data-title="$B^-\to\Lambda_c^+\Lambda_c^- K^-$ analysis model" data-description="Untitled, K-matrix model">N-018-LcLcK.jl</a>
+    <div class="notebook-details">
+        <span class="title">$B^-\to\Lambda_c^+\Lambda_c^- K^-$ analysis model</span>
+        
+        <ul class="subtitles"><li>Untitled</li><li>K-matrix model</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-022-OcXX2XicK.html" target="notebook-frame" data-title="Angular distribition with SymPy" data-description="Angular distribition with SymPy">N-022-OcXX2XicK.jl</a>
+    <div class="notebook-details">
+        <span class="title">Angular distribition with SymPy</span>
+        
+        <ul class="subtitles"></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-026-fourier_massspectrum.html" target="notebook-frame" data-title="N-026-fourier_massspectrum.jl" data-description="N-026-fourier_massspectrum.jl">N-026-fourier_massspectrum.jl</a>
+    <div class="notebook-details">
+        <span class="untitled-warning">N-026-fourier_massspectrum.jl</span>
+        <span class="warning-message">
+    ⚠️ This notebook needs a title and description. 
+    Please add a markdown cell with a # Title and brief description.
+</span>
+        <ul class="subtitles"></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-028-pole_search_optim.html" target="notebook-frame" data-title="N-028-pole_search_optim.jl" data-description="N-028-pole_search_optim.jl">N-028-pole_search_optim.jl</a>
+    <div class="notebook-details">
+        <span class="untitled-warning">N-028-pole_search_optim.jl</span>
+        <span class="warning-message">
+    ⚠️ This notebook needs a title and description. 
+    Please add a markdown cell with a # Title and brief description.
+</span>
+        <ul class="subtitles"></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-029-introduction2complexplane.html" target="notebook-frame" data-title="Introduction to the complex analysis" data-description="Analytic continuation, Examples of the Riemann surfaces, Dispersion relations">N-029-introduction2complexplane.jl</a>
+    <div class="notebook-details">
+        <span class="title">Introduction to the complex analysis</span>
+        
+        <ul class="subtitles"><li>Analytic continuation</li><li>Examples of the Riemann surfaces</li><li>Dispersion relations</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-030-merging_poles.html" target="notebook-frame" data-title="N-030-merging_poles.jl" data-description="N-030-merging_poles.jl">N-030-merging_poles.jl</a>
+    <div class="notebook-details">
+        <span class="untitled-warning">N-030-merging_poles.jl</span>
+        <span class="warning-message">
+    ⚠️ This notebook needs a title and description. 
+    Please add a markdown cell with a # Title and brief description.
+</span>
+        <ul class="subtitles"></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-033-LcXX2Lcpipi_angle_crosscheck.html" target="notebook-frame" data-title="Cross check of wigner angles" data-description="Cross check of wigner angles">N-033-LcXX2Lcpipi_angle_crosscheck.jl</a>
+    <div class="notebook-details">
+        <span class="title">Cross check of wigner angles</span>
+        
+        <ul class="subtitles"></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-035-numconv_prototype.html" target="notebook-frame" data-title="Numerical convolution (primitive demo)" data-description="Untitled">N-035-numconv_prototype.jl</a>
+    <div class="notebook-details">
+        <span class="title">Numerical convolution (primitive demo)</span>
+        
+        <ul class="subtitles"><li>Untitled</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-038-Spuriouspole_a1.html" target="notebook-frame" data-title="Untitled" data-description="Untitled">N-038-Spuriouspole_a1.jl</a>
+    <div class="notebook-details">
+        <span class="untitled-warning">Untitled</span>
+        <span class="warning-message">
+    ⚠️ This notebook needs a title and description. 
+    Please add a markdown cell with a # Title and brief description.
+</span>
+        <ul class="subtitles"><li>Untitled</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-039-logsqrt_complex_structure.html" target="notebook-frame" data-title="Example of log-sqrt function" data-description="Example of log-sqrt function">N-039-logsqrt_complex_structure.jl</a>
+    <div class="notebook-details">
+        <span class="title">Example of log-sqrt function</span>
+        
+        <ul class="subtitles"></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-041-derivativeBWonArgand.html" target="notebook-frame" data-title="Untitled" data-description="Combined amplitude on complex plane, Derivative should be zero">N-041-derivativeBWonArgand.jl</a>
+    <div class="notebook-details">
+        <span class="untitled-warning">Untitled</span>
+        <span class="warning-message">
+    ⚠️ This notebook needs a title and description. 
+    Please add a markdown cell with a # Title and brief description.
+</span>
+        <ul class="subtitles"><li>Combined amplitude on complex plane</li><li>Derivative should be zero</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-042-detDsymbolics.html" target="notebook-frame" data-title="Scattering parameters for coupled-channel case" data-description="Two-channels, Three-channels">N-042-detDsymbolics.jl</a>
+    <div class="notebook-details">
+        <span class="title">Scattering parameters for coupled-channel case</span>
+        
+        <ul class="subtitles"><li>Two-channels</li><li>Three-channels</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-045-a1dalitz.html" target="notebook-frame" data-title="Dalitz Plot for $a_1(1260)$" data-description="Schematic Dalitz Plot, More realistic Dalitz Plot, Even-more realistic Dalitz Plot (+spin)">N-045-a1dalitz.jl</a>
+    <div class="notebook-details">
+        <span class="title">Dalitz Plot for $a_1(1260)$</span>
+        
+        <ul class="subtitles"><li>Schematic Dalitz Plot</li><li>More realistic Dalitz Plot</li><li>Even-more realistic Dalitz Plot (+spin)</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-046-LcLcK_momentumdistribution.html" target="notebook-frame" data-title="Check of $B^+ \to \Lambda_c^+ \overline{\Lambda}_c^-K^+$ efficiency" data-description="Untitled, Inefficiency">N-046-LcLcK_momentumdistribution.jl</a>
+    <div class="notebook-details">
+        <span class="title">Check of $B^+ \to \Lambda_c^+ \overline{\Lambda}_c^-K^+$ efficiency</span>
+        
+        <ul class="subtitles"><li>Untitled</li><li>Inefficiency</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-049-singlechannelkmatrix.html" target="notebook-frame" data-title="A model for a multi-resonance wave" data-description="A model for a multi-resonance wave">N-049-singlechannelkmatrix.jl</a>
+    <div class="notebook-details">
+        <span class="title">A model for a multi-resonance wave</span>
+        
+        <ul class="subtitles"></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-050-pipiDeck.html" target="notebook-frame" data-title="OPE singularity for $\pi\pi$ spectrum of the Deck process" data-description="OPE singularity for $\pi\pi$ spectrum of the Deck process">N-050-pipiDeck.jl</a>
+    <div class="notebook-details">
+        <span class="title">OPE singularity for $\pi\pi$ spectrum of the Deck process</span>
+        
+        <ul class="subtitles"></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-051-Xibpipi-feeddown.html" target="notebook-frame" data-title="Untitled" data-description="Decay paths, Three-body spectra, Feeddown, Compute the feeddown range">N-051-Xibpipi-feeddown.jl</a>
+    <div class="notebook-details">
+        <span class="untitled-warning">Untitled</span>
+        <span class="warning-message">
+    ⚠️ This notebook needs a title and description. 
+    Please add a markdown cell with a # Title and brief description.
+</span>
+        <ul class="subtitles"><li>Decay paths</li><li>Three-body spectra</li><li>Feeddown</li><li>Compute the feeddown range</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-054-B2jpsietaK.html" target="notebook-frame" data-title="N-054-B2jpsietaK.jl" data-description="N-054-B2jpsietaK.jl">N-054-B2jpsietaK.jl</a>
+    <div class="notebook-details">
+        <span class="untitled-warning">N-054-B2jpsietaK.jl</span>
+        <span class="warning-message">
+    ⚠️ This notebook needs a title and description. 
+    Please add a markdown cell with a # Title and brief description.
+</span>
+        <ul class="subtitles"></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-054-Mmatrix-and-Kmatrix.html" target="notebook-frame" data-title="Constant K/M-matrix approach" data-description="K-matrix parameters, M-matrix">N-054-Mmatrix-and-Kmatrix.jl</a>
+    <div class="notebook-details">
+        <span class="title">Constant K/M-matrix approach</span>
+        
+        <ul class="subtitles"><li>K-matrix parameters</li><li>M-matrix</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-056-Chew-Mandelstam.html" target="notebook-frame" data-title="N-056-Chew-Mandelstam.jl" data-description="N-056-Chew-Mandelstam.jl">N-056-Chew-Mandelstam.jl</a>
+    <div class="notebook-details">
+        <span class="untitled-warning">N-056-Chew-Mandelstam.jl</span>
+        <span class="warning-message">
+    ⚠️ This notebook needs a title and description. 
+    Please add a markdown cell with a # Title and brief description.
+</span>
+        <ul class="subtitles"></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-057-a12piKK_toys.html" target="notebook-frame" data-title="$a_1(1260)$ and $a_1(1420)$ pseudoexperiments" data-description="Untitled, Save MC to disc">N-057-a12piKK_toys.jl</a>
+    <div class="notebook-details">
+        <span class="title">$a_1(1260)$ and $a_1(1420)$ pseudoexperiments</span>
+        
+        <ul class="subtitles"><li>Untitled</li><li>Save MC to disc</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-058-dispesion-blatt-weisskopf.html" target="notebook-frame" data-title="Dispersive phase space" data-description="Kinematics, Dispesion integral, Example of evaluation">N-058-dispesion-blatt-weisskopf.jl</a>
+    <div class="notebook-details">
+        <span class="title">Dispersive phase space</span>
+        
+        <ul class="subtitles"><li>Kinematics</li><li>Dispesion integral</li><li>Example of evaluation</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-059-PDG-API.html" target="notebook-frame" data-title="Calling PDG API from Julia" data-description="Calling PDG API from Julia">N-059-PDG-API.jl</a>
+    <div class="notebook-details">
+        <span class="title">Calling PDG API from Julia</span>
+        
+        <ul class="subtitles"></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-060-double-regge.html" target="notebook-frame" data-title="Double-Regge divergent integral" data-description="Double-Regge divergent integral">N-060-double-regge.jl</a>
+    <div class="notebook-details">
+        <span class="title">Double-Regge divergent integral</span>
+        
+        <ul class="subtitles"></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-061-complex-random-variance.html" target="notebook-frame" data-title="Untitled" data-description="Complex random variable">N-061-complex-random-variance.jl</a>
+    <div class="notebook-details">
+        <span class="untitled-warning">Untitled</span>
+        <span class="warning-message">
+    ⚠️ This notebook needs a title and description. 
+    Please add a markdown cell with a # Title and brief description.
+</span>
+        <ul class="subtitles"><li>Complex random variable</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-062-poisson-CL.html" target="notebook-frame" data-title="Poisson confidence interval" data-description="Inverting commulative, Jump values directly from CDF, Compare to standard formulas">N-062-poisson-CL.jl</a>
+    <div class="notebook-details">
+        <span class="title">Poisson confidence interval</span>
+        
+        <ul class="subtitles"><li>Inverting commulative</li><li>Jump values directly from CDF</li><li>Compare to standard formulas</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-063-poisson-profile.html" target="notebook-frame" data-title="Poisson likelihood profile" data-description="Poisson likelihood profile">N-063-poisson-profile.jl</a>
+    <div class="notebook-details">
+        <span class="title">Poisson likelihood profile</span>
+        
+        <ul class="subtitles"></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-066-virtual-and-bound-states.html" target="notebook-frame" data-title="Untitled" data-description="Poles">N-066-virtual-and-bound-states.jl</a>
+    <div class="notebook-details">
+        <span class="untitled-warning">Untitled</span>
+        <span class="warning-message">
+    ⚠️ This notebook needs a title and description. 
+    Please add a markdown cell with a # Title and brief description.
+</span>
+        <ul class="subtitles"><li>Poles</li></ul>
+    </div>
+</li>
+<li>
+    <a href="notebooks/N-070-TrackLorentzGroup.html" target="notebook-frame" data-title="Tracking Lorentz Transformations using combined SL(2,C)&amp;SO(3,1) representations" data-description="Matrices of SO(3,1), Matrices of SL(2,C), Joined representation, Test: decoding matrix composition">N-070-TrackLorentzGroup.jl</a>
+    <div class="notebook-details">
+        <span class="title">Tracking Lorentz Transformations using combined SL(2,C)&SO(3,1) representations</span>
+        
+        <ul class="subtitles"><li>Matrices of SO(3,1)</li><li>Matrices of SL(2,C)</li><li>Joined representation</li><li>Test: decoding matrix composition</li></ul>
+    </div>
+</li>
+ </ul>
+            </div>
+        </div>
+        <div class="iframe-container">
+            <iframe name="notebook-frame" class="notebook-display" src="README.html" title="Notebook viewer" onerror="handleIframeError(this)"></iframe>
+        </div>
+    </div>
+    <script>
+        (function() {
+        // Sidebar resize functionality
+        const resizeHandle = document.querySelector('.resize-handle');
+        const sidebar = document.querySelector('.index-panel');
+        const iframeContainer = document.querySelector('.iframe-container');
+        let isResizing = false;
+
+        function handleMouseMove(e) {
+            if (!isResizing) return;
+            e.preventDefault();
+            const newWidth = Math.max(50, Math.min(600, e.clientX));
+            sidebar.style.width = newWidth + 'px';
+        }
+
+        function stopResize(e) {
+            if (!isResizing) return;
+            isResizing = false;
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', stopResize);
+            window.removeEventListener('mouseleave', stopResize);
+        }
+
+            if (resizeHandle) {
+        resizeHandle.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            isResizing = true;
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', stopResize);
+            window.addEventListener('mouseleave', stopResize);
+        });
+            }
+
+        // Sidebar collapse functionality
+        const toggleButton = document.querySelector('.toggle-button');
+        
+            if (toggleButton) {
+        toggleButton.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+        });
+            }
+
+        // Restore sidebar state on page load
+        window.addEventListener('load', () => {
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+                if (isCollapsed && sidebar) {
+                sidebar.classList.add('collapsed');
+                }
+            });
+
+            // Search functionality
+            const searchBox = document.getElementById('searchBox');
+            const searchClear = document.getElementById('searchClear');
+            const notebookList = document.getElementById('notebookList');
+            const allNotebookItems = [];
+
+            // Collect all notebook items (excluding README)
+            function collectNotebookItems() {
+                const items = notebookList.querySelectorAll('li:not(:first-child)');
+                items.forEach(item => {
+                    const link = item.querySelector('a');
+                    if (link) {
+                        const title = link.getAttribute('data-title') || link.textContent;
+                        const description = link.getAttribute('data-description') || '';
+                        const filename = link.textContent;
+                        const details = item.querySelector('.notebook-details');
+                        const subtitles = details ? Array.from(details.querySelectorAll('.subtitles li')).map(li => li.textContent).join(' ') : '';
+                        
+                        allNotebookItems.push({
+                            element: item,
+                            searchText: (filename + ' ' + title + ' ' + description + ' ' + subtitles).toLowerCase()
+                        });
+                    }
+                });
+            }
+
+            function filterNotebooks(searchTerm) {
+                const term = searchTerm.toLowerCase().trim();
+                let visibleCount = 0;
+
+                allNotebookItems.forEach(({element, searchText}) => {
+                    if (term === '' || searchText.includes(term)) {
+                        element.classList.remove('no-match');
+                        visibleCount++;
+                    } else {
+                        element.classList.add('no-match');
+                    }
+                });
+
+                // Show/hide clear button
+                if (searchClear) {
+                    if (term.length > 0) {
+                        searchClear.classList.add('visible');
+                    } else {
+                        searchClear.classList.remove('visible');
+                    }
+                }
+
+                // Show empty state if no results
+                let emptyState = notebookList.querySelector('.empty-state');
+                if (visibleCount === 0 && term.length > 0) {
+                    if (!emptyState) {
+                        emptyState = document.createElement('li');
+                        emptyState.className = 'empty-state';
+                        emptyState.innerHTML = '<div class="empty-state-icon">📚</div><div class="empty-state-text">No notebooks found matching "' + term + '"</div>';
+                        notebookList.appendChild(emptyState);
+                    }
+                } else if (emptyState) {
+                    emptyState.remove();
+                }
+            }
+
+            if (searchBox) {
+                searchBox.addEventListener('input', (e) => {
+                    filterNotebooks(e.target.value);
+                });
+
+                // Keyboard shortcuts
+                searchBox.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        searchBox.value = '';
+                        filterNotebooks('');
+                        searchBox.blur();
+                    }
+                });
+            }
+
+            if (searchClear) {
+                searchClear.addEventListener('click', () => {
+                    if (searchBox) {
+                        searchBox.value = '';
+                        filterNotebooks('');
+                        searchBox.focus();
+                    }
+                });
+            }
+
+            // Active link highlighting
+            function setActiveLink(href) {
+                const links = notebookList.querySelectorAll('a');
+                links.forEach(link => {
+                    if (link.getAttribute('href') === href) {
+                        link.classList.add('active');
+                    } else {
+                        link.classList.remove('active');
+                    }
+                });
+            }
+
+            // Update active link when iframe loads
+            const iframe = document.querySelector('iframe[name="notebook-frame"]');
+            if (iframe) {
+                iframe.addEventListener('load', () => {
+                    try {
+                        const iframeSrc = iframe.contentWindow.location.pathname;
+                        const relativePath = iframeSrc.split('/').pop() || 'README.html';
+                        setActiveLink(relativePath);
+                    } catch (e) {
+                        // Cross-origin or other error, use src attribute
+                        const src = iframe.getAttribute('src');
+                        if (src) {
+                            setActiveLink(src);
+                        }
+                    }
+                });
+            }
+
+            // Handle clicks on notebook links
+            notebookList.addEventListener('click', (e) => {
+                const link = e.target.closest('a');
+                if (link) {
+                    setActiveLink(link.getAttribute('href'));
+                }
+            });
+
+            // Initialize
+            collectNotebookItems();
+            
+            // Handle iframe load errors
+            function handleIframeError(iframe) {
+                // This will be called if iframe fails to load
+                console.warn('Iframe failed to load:', iframe.src);
+            }
+            
+            // Check if iframe loaded successfully
+            const iframe = document.querySelector('iframe[name="notebook-frame"]');
+            if (iframe) {
+                iframe.addEventListener('load', function() {
+                    try {
+                        // Try to access iframe content to check if it loaded
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        // If we can access it, check for 404
+                        if (iframeDoc.body && iframeDoc.body.textContent.includes('404')) {
+                            showNotFoundMessage(iframe.src);
+                        }
+                    } catch (e) {
+                        // Cross-origin or other error - might be 404
+                        // Check after a delay
+                        setTimeout(() => {
+                            try {
+                                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                                if (!iframeDoc || !iframeDoc.body) {
+                                    showNotFoundMessage(iframe.src);
+                                }
+                            } catch (err) {
+                                // Can't access - might be cross-origin, which is fine
+                            }
+                        }, 1000);
+                    }
+                });
+                
+                iframe.addEventListener('error', function() {
+                    showNotFoundMessage(iframe.src);
+                });
+            }
+            
+            function showNotFoundMessage(url) {
+                const iframe = document.querySelector('iframe[name="notebook-frame"]');
+                if (iframe) {
+                    const filename = url.split('/').pop() || url;
+                    const errorHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f8f9fa;color:#4a5568}.error-container{text-align:center;padding:40px;max-width:600px}.error-icon{font-size:64px;margin-bottom:20px}h1{color:#1a202c;margin-bottom:16px}p{line-height:1.6;margin-bottom:12px}code{background:#e2e8f0;padding:2px 6px;border-radius:3px;font-family:monospace}</style></head><body><div class="error-container"><div class="error-icon">📄</div><h1>Notebook Not Found</h1><p>The notebook <code>' + filename + '</code> could not be found.</p><p><strong>Local Testing:</strong> Notebook HTML files are generated by PlutoSliderServer in the CI workflow. They won't exist locally unless you export them manually.</p><p><strong>On GitHub Pages:</strong> If you see this on the live site, the notebook may not have been exported successfully.</p></div></body></html>';
+                    iframe.srcdoc = errorHtml;
+                }
+            }
+        })();
+    </script>
+</body>
+</html>

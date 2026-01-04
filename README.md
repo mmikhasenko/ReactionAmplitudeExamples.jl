@@ -1,0 +1,118 @@
+# Reaction Amplitude Examples
+
+Unordered collection of julia scripts and notebooks related to particle physics, reaction theory, statistics, and data analysis.
+
+- [GitHub repository](https://github.com/mmikhasenko/ReactionAmplitudeExamples.jl)
+
+Pluto notebooks are run in CI and available from the [GitHub Pages](https://mmikhasenko.github.io/ReactionAmplitudeExamples.jl/).
+
+**Note:** Long-running notebooks (execution time > 2.5 minutes) are located in the [`notebooks/long_running/`](notebooks/long_running/) folder and are not listed here. They are still processed in CI and available on GitHub Pages.
+
+## General
+
+- [N-026-fourier_massspectrum.jl](notebooks/N-026-fourier_massspectrum.jl)
+- [N-061-complex-random-variance.jl](notebooks/N-061-complex-random-variance.jl)
+
+## HEP
+
+- [N-012-Pythia_FHist_plots.jl](notebooks/N-012-Pythia_FHist_plots.jl)
+- [N-062-poisson-CL.jl](notebooks/N-062-poisson-CL.jl)
+- [L-014-MixedModel-chi2.jl](notebooks/L-014-MixedModel-chi2.jl)
+- [N-013-MixedModelExample.jl](notebooks/N-013-MixedModelExample.jl)
+- [N-059-PDG-API.jl](notebooks/N-059-PDG-API.jl)
+- [N-035-numconv_prototype.jl](notebooks/N-035-numconv_prototype.jl)
+- [N-063-poisson-profile.jl](notebooks/N-063-poisson-profile.jl)
+
+## Coupled channels
+
+### Complex analysis
+
+- [N-029-introduction2complexplane.jl](notebooks/N-029-introduction2complexplane.jl)
+- [N-039-logsqrt_complex_structure.jl](notebooks/N-039-logsqrt_complex_structure.jl)
+- [N-056-Chew-Mandelstam.jl](notebooks/N-056-Chew-Mandelstam.jl)
+- [L-047-effectiverangeof2bloop.jl](notebooks/L-047-effectiverangeof2bloop.jl)
+- [N-058-dispesion-blatt-weisskopf.jl](notebooks/N-058-dispesion-blatt-weisskopf.jl)
+
+### K-matrix
+
+- [L-055-Kmatrix-sliders.jl](notebooks/L-055-Kmatrix-sliders.jl)
+- [N-054-Mmatrix-and-Kmatrix.jl](notebooks/N-054-Mmatrix-and-Kmatrix.jl)
+- [N-042-detDsymbolics.jl](notebooks/N-042-detDsymbolics.jl)
+- [N-049-singlechannelkmatrix.jl](notebooks/N-049-singlechannelkmatrix.jl)
+<!-- explanation of phenomena -->
+- [N-017-UnitarizedBackground.jl](notebooks/N-017-UnitarizedBackground.jl)
+- [N-041-derivativeBWonArgand.jl](notebooks/N-041-derivativeBWonArgand.jl)
+- [N-028-pole_search_optim.jl](notebooks/N-028-pole_search_optim.jl)
+- [N-030-merging_poles.jl](notebooks/N-030-merging_poles.jl)
+- [N-066-virtual-and-bound-states.jl](notebooks/N-066-virtual-and-bound-states.jl)
+<!-- examples -->
+- [N-016-XicK_phasespace_suppression.jl](notebooks/N-016-XicK_phasespace_suppression.jl)
+- [L-044-DsDsState.jl](notebooks/L-044-DsDsState.jl)
+- [N-038-Spuriouspole_a1.jl](notebooks/N-038-Spuriouspole_a1.jl)
+
+## Triangles
+
+- [L-025-psi-triangle.jl](notebooks/L-025-psi-triangle.jl)
+- [N-003-advanced_bw.jl](notebooks/N-003-advanced_bw.jl)
+
+## Three body decays
+
+- [L-024-X2Dx0D0Triangle.jl](notebooks/L-024-X2Dx0D0Triangle.jl)
+- [L-032-quiverplot.jl](notebooks/L-032-quiverplot.jl)
+- [L-052-Xib2Xibpipi.jl](notebooks/L-052-Xib2Xibpipi.jl)
+- [N-057-a12piKK_toys.jl](notebooks/N-057-a12piKK_toys.jl)
+- [L-053-Lbpipi_dalitz.jl](notebooks/L-053-Lbpipi_dalitz.jl)
+- [N-054-B2jpsietaK.jl](notebooks/N-054-B2jpsietaK.jl)
+- [N-018-LcLcK.jl](notebooks/N-018-LcLcK.jl)
+- [N-022-OcXX2XicK.jl](notebooks/N-022-OcXX2XicK.jl)
+- [N-033-LcXX2Lcpipi_angle_crosscheck.jl](notebooks/N-033-LcXX2Lcpipi_angle_crosscheck.jl)
+- [N-045-a1dalitz.jl](notebooks/N-045-a1dalitz.jl)
+- [N-046-LcLcK_momentumdistribution.jl](notebooks/N-046-LcLcK_momentumdistribution.jl)
+- [N-051-Xibpipi-feeddown.jl](notebooks/N-051-Xibpipi-feeddown.jl)
+- [N-070-TrackLorentzGroup.jl](notebooks/N-070-TrackLorentzGroup.jl)
+
+## JPAC
+
+- [N-001-Adams_regge_integral.jl](notebooks/N-001-Adams_regge_integral.jl)
+- [N-060-double-regge.jl](notebooks/N-060-double-regge.jl)
+- [N-050-pipiDeck.jl](notebooks/N-050-pipiDeck.jl)
+
+
+## How to run scripts
+
+- Download and install [julia](https://julialang.org/)
+- Run the scripts/notebooks either in terminal, or interactively in [VS code](https://code.visualstudio.com/) or browser for the notebooks.
+
+### Pluto notebooks
+
+```julia
+# open julia terminal
+using Pluto
+Pluto.run() # a new tab will open in the browser
+# navigate to notebook file N-XXX-Cool_stuff.jl
+```
+
+**Note:** Long-running notebooks in `notebooks/long_running/` are excluded from automatic discovery in CI. When running Pluto locally, they may appear in the file browser but are not processed automatically.
+
+### Local index
+
+To build and serve a local index page (similar to the GitHub Pages site) for browsing notebooks:
+
+```bash
+julia scripts/build_and_serve.jl
+```
+
+This will:
+1. Generate `index.html` from the notebooks in the `notebooks/` directory
+2. Generate `README.html` from this README file
+3. Start a local HTTP server on port 8000
+
+Then open your browser to `http://localhost:8000/index.html` to view the local index.
+
+**Note:** The local index shows the notebook structure and links, but the actual notebook HTML files are generated by PlutoSliderServer in CI. Individual notebook HTML files won't be available locally unless you export them manually from Pluto.
+
+### Notebook environment management
+
+Scripts in `services/` for managing notebook environments:
+- `analyze_common_env.jl` - Analyzes all notebooks and generates a common `Project.toml` and `Manifest.toml`
+- `unify_notebooks.jl` - Updates all notebooks to use a common environment (see `services/UNIFICATION_PLAN.md` for details)
