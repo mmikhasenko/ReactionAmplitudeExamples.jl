@@ -1,8 +1,10 @@
-# Examples
+# Reaction Amplitude Examples
 
 Unordered collection of julia scripts and notebooks related to particle physics, reaction theory, statistics, and data analysis.
 
-Pluto notebooks are run in CI and available from the [Git Pages](https://mmikhasenko.github.io/ReactionAmplitudeExamples.jl/).
+- [GitHub repository](https://github.com/mmikhasenko/ReactionAmplitudeExamples.jl)
+
+Pluto notebooks are run in CI and available from the [GitHub Pages](https://mmikhasenko.github.io/ReactionAmplitudeExamples.jl/).
 
 **Note:** Long-running notebooks (execution time > 2.5 minutes) are located in the [`notebooks/long_running/`](notebooks/long_running/) folder and are not listed here. They are still processed in CI and available on GitHub Pages.
 
