@@ -59,6 +59,7 @@ Pluto notebooks are run in CI and available from the [Git Pages](https://mmikhas
 - [L-032-quiverplot.jl](notebooks/L-032-quiverplot.jl)
 - [L-052-Xib2Xibpipi.jl](notebooks/L-052-Xib2Xibpipi.jl)
 - [N-057-a12piKK_toys.jl](notebooks/N-057-a12piKK_toys.jl)
+- [L-053-Lbpipi_dalitz.jl](notebooks/L-053-Lbpipi_dalitz.jl)
 - [N-054-B2jpsietaK.jl](notebooks/N-054-B2jpsietaK.jl)
 - [N-018-LcLcK.jl](notebooks/N-018-LcLcK.jl)
 - [N-022-OcXX2XicK.jl](notebooks/N-022-OcXX2XicK.jl)
