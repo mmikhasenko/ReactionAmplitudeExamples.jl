@@ -1,7 +1,3 @@
 .vscode/settings.json
 .DS_Store
 
-notebooks/N-*.html
-notebooks/L-*.html
-notebooks/test_pluto_state_cache
-notebooks/*.plutostate
